@@ -1,0 +1,8 @@
+Emacs				c:/emacs/bin/runemacs.exe
+GVim				c:/vim/gvim.exe
+GIMP				c:/progra~1/gimp-2.0/bin/gimp-2.6.exe
+Explorer			rundll32 url.dll,FileProtocolHandler .
+Task Maanger		taskmgr
+Service Manager		mmc c:\windows\system32\services.msc
+Browser				start http:
+Putty				c:/progra~1/putty/putty.exe
