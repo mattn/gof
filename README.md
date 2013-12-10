@@ -17,7 +17,7 @@ Go Fuzzy
 
 * Glob files and edit the selected file with vim.
 
-    $ vim `gof`
+    $ vim \`gof\`
 
 * Run gof and type `CTRL-O`, then start to edit with editor.
 
