@@ -419,7 +419,7 @@ loop:
 				}
 				cursor_x = len(input)
 				update = true
-			case termbox.KeyBackspace:
+			case termbox.KeyBackspace, termbox.KeyBackspace2:
 				if cursor_x > 0 {
 					input = append(input[0:cursor_x-1], input[cursor_x:len(input)]...)
 					cursor_x--
