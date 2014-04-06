@@ -5,8 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/mattn/go-runewidth"
-	"github.com/nsf/termbox-go"
 	"io"
 	"io/ioutil"
 	"os"
@@ -18,12 +16,16 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/mattn/go-runewidth"
+	"github.com/nsf/termbox-go"
 )
 
 var duration = 10 * time.Millisecond
 
 var edit = flag.Bool("e", false, "Edit selected file")
 var cat = flag.Bool("c", false, "Cat the file")
+var remove = flag.Bool("r", false, "Remove the file")
 var launcher = flag.Bool("l", false, "Launcher mode")
 var root = flag.String("d", "", "Root directory")
 
@@ -167,12 +169,12 @@ func draw_screen() {
 		pos2 := current[n].pos2
 		if pos1 >= 0 {
 			pwidth := runewidth.StringWidth(string([]rune(current[n].name)[0:pos1]))
-			if !heading && pwidth > width / 2 {
+			if !heading && pwidth > width/2 {
 				rname := []rune(name)
 				wwidth := 0
 				for i := 0; i < len(rname); i++ {
 					w = runewidth.RuneWidth(rname[i])
-					if wwidth + w > width / 2 {
+					if wwidth+w > width/2 {
 						name = "..." + string(rname[i:])
 						pos1 -= i - 3
 						pos2 -= i - 3
@@ -396,8 +398,10 @@ loop:
 					cursor_y--
 				}
 			case termbox.KeyCtrlO:
-				*edit = true
-				break loop
+				if cursor_y >= 0 && cursor_y < len(current) {
+					*edit = true
+					break loop
+				}
 			case termbox.KeyCtrlI:
 				heading = !heading
 			case termbox.KeyCtrlL:
@@ -535,6 +539,8 @@ loop:
 		}
 		defer f.Close()
 		io.Copy(os.Stdout, f)
+	} else if *remove {
+		os.Remove(target)
 	} else if flag.NArg() > 0 {
 		args := flag.Args()
 		args = append(args, target)
