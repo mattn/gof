@@ -39,7 +39,7 @@ func printf_tb(x, y int, fg, bg termbox.Attribute, format string, args ...interf
 	print_tb(x, y, fg, bg, s)
 }
 
-func edit_file(target string) error {
+func edit_file(files []string) error {
 	env := os.Getenv("GOFEDITOR")
 	if env == "" {
 		env = os.Getenv("EDITOR")
@@ -48,7 +48,7 @@ func edit_file(target string) error {
 		env = "vim"
 	}
 	args := strings.Split(env, " ")
-	args = append(args, target)
+	args = append(args, files...)
 	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -64,6 +64,7 @@ type matched struct {
 	name string
 	pos1 int
 	pos2 int
+	selected bool
 }
 
 type filtered []matched
@@ -82,6 +83,7 @@ func (f filtered) Swap(i, j int) {
 
 var input = []rune{}
 var files = []string{}
+var selected = []string{}
 var heading = false
 var current filtered
 var cursor_x, cursor_y int
@@ -100,10 +102,18 @@ func filter() {
 	if len(input) == 0 {
 		current = make(filtered, len(files))
 		for n, f := range files[0:len(current)] {
+			prev_selected := false
+			for _, s := range selected {
+				if f == s {
+					prev_selected = true
+					break
+				}
+			}
 			current[n] = matched{
 				name: f,
 				pos1: -1,
 				pos2: -1,
+				selected: prev_selected,
 			}
 		}
 	} else {
@@ -120,10 +130,18 @@ func filter() {
 			if len(ms) != 1 || len(ms[0]) != 4 {
 				continue
 			}
+			prev_selected := false
+			for _, s := range selected {
+				if f == s {
+					prev_selected = true
+					break
+				}
+			}
 			current = append(current, matched{
 				name: f,
 				pos1: len([]rune(f[0:ms[0][2]])),
 				pos2: len([]rune(f[0:ms[0][3]])),
+				selected: prev_selected,
 			})
 		}
 	}
@@ -165,6 +183,7 @@ func draw_screen() {
 		name := current[n].name
 		pos1 := current[n].pos1
 		pos2 := current[n].pos2
+		selected := current[n].selected
 		if pos1 >= 0 {
 			pwidth := runewidth.StringWidth(string([]rune(current[n].name)[0:pos1]))
 			if !heading && pwidth > width / 2 {
@@ -193,13 +212,17 @@ func draw_screen() {
 				break
 			}
 			if pos1 <= f && f < pos2 {
-				if cursor_y == n {
-					termbox.SetCell(x, height-4-n, c, termbox.ColorGreen|termbox.AttrBold|termbox.AttrUnderline, termbox.ColorDefault)
+				if selected {
+					termbox.SetCell(x, height-4-n, c, termbox.ColorRed|termbox.AttrBold, termbox.ColorDefault)
+				} else if cursor_y == n {
+					termbox.SetCell(x, height-4-n, c, termbox.ColorYellow|termbox.AttrBold|termbox.AttrUnderline, termbox.ColorDefault)
 				} else {
 					termbox.SetCell(x, height-4-n, c, termbox.ColorGreen|termbox.AttrBold, termbox.ColorDefault)
 				}
 			} else {
-				if cursor_y == n {
+				if selected {
+					termbox.SetCell(x, height-4-n, c, termbox.ColorRed|termbox.AttrBold, termbox.ColorDefault)
+				} else if cursor_y == n {
 					termbox.SetCell(x, height-4-n, c, termbox.ColorYellow|termbox.AttrUnderline, termbox.ColorDefault)
 				} else {
 					termbox.SetCell(x, height-4-n, c, termbox.ColorWhite|termbox.AttrBold, termbox.ColorDefault)
@@ -215,7 +238,7 @@ func draw_screen() {
 		print_tb(0, height-3, termbox.ColorGreen|termbox.AttrBold, termbox.ColorBlack, string([]rune("-\\|/")[scanning%4]))
 		scanning++
 	}
-	printf_tb(2, height-3, termbox.ColorWhite|termbox.AttrBold, termbox.ColorBlack, "%d/%d", len(current), len(files))
+	printf_tb(2, height-3, termbox.ColorWhite|termbox.AttrBold, termbox.ColorBlack, "%d/%d(%d)", len(current), len(files), len(selected))
 	print_tb(0, height-2, termbox.ColorBlue|termbox.AttrBold, termbox.ColorBlack, "> ")
 	print_tb(2, height-2, termbox.ColorWhite|termbox.AttrBold, termbox.ColorBlack, string(input))
 	termbox.SetCursor(2+runewidth.StringWidth(string(input[0:cursor_x])), height-2)
@@ -375,6 +398,9 @@ loop:
 				cursor_x = len(input)
 			case termbox.KeyEnter:
 				if cursor_y >= 0 && cursor_y < len(current) {
+					if len(selected) == 0 {
+						selected = append(selected, current[cursor_y].name)
+					}
 					break loop
 				}
 			case termbox.KeyArrowLeft:
@@ -418,6 +444,21 @@ loop:
 					input = []rune{}
 				}
 				cursor_x = len(input)
+				update = true
+			case termbox.KeyCtrlZ:
+				found := -1
+				name := current[cursor_y].name
+				for i, s := range selected {
+					if name == s {
+						found = i
+						break
+					}
+				}
+				if found == -1 {
+					selected = append(selected, current[cursor_y].name)
+				} else {
+					selected = append(selected[:found],  selected[found+1:]...)
+				}
 				update = true
 			case termbox.KeyBackspace:
 				if cursor_x > 0 {
@@ -475,69 +516,71 @@ loop:
 
 	tty_term()
 
-	target := ""
-	if cursor_y < len(current) {
-		target = filepath.Join(cwd, current[cursor_y].name)
-	}
-
-	if target == "" {
+	if len(selected) == 0 {
 		os.Exit(1)
 	}
 
-	if *launcher {
-		target = current[cursor_y].name
-		for _, line := range launcherFiles {
-			cols := strings.SplitN(line, "\t", 2)
-			if len(cols) == 2 && cols[0] == target {
-				target = strings.TrimSpace(cols[1])
+	if !*launcher {
+		for i, f := range selected {
+			selected[i] = filepath.Join(cwd, f)
+		}
+	}
 
-				stdin := os.Stdin
-				stdout := os.Stdout
-				var shell, shellcflag string
-				if runtime.GOOS == "windows" {
-					stdin, _ = os.Open("CONIN$")
-					stdout, _ = os.Open("CONOUT$")
-					shell = os.Getenv("COMSPEC")
-					if shell == "" {
-						shell = "cmd"
+	if *launcher {
+		for _, f := range selected {
+			for _, line := range launcherFiles {
+				cols := strings.SplitN(line, "\t", 2)
+				if len(cols) == 2 && cols[0] == f {
+					stdin := os.Stdin
+					stdout := os.Stdout
+					var shell, shellcflag string
+					if runtime.GOOS == "windows" {
+						stdin, _ = os.Open("CONIN$")
+						stdout, _ = os.Open("CONOUT$")
+						shell = os.Getenv("COMSPEC")
+						if shell == "" {
+							shell = "cmd"
+						}
+						shellcflag = "/c"
+					} else {
+						stdin = os.Stdin
+						shell = os.Getenv("SHELL")
+						if shell == "" {
+							shell = "sh"
+						}
+						shellcflag = "-c"
 					}
-					shellcflag = "/c"
-				} else {
-					stdin = os.Stdin
-					shell = os.Getenv("SHELL")
-					if shell == "" {
-						shell = "sh"
+					cmd := exec.Command(shell, shellcflag, strings.TrimSpace(cols[1]))
+					cmd.Stdin = stdin
+					cmd.Stdout = stdout
+					cmd.Stderr = os.Stderr
+					err = cmd.Start()
+					if err != nil {
+						fmt.Fprintln(os.Stderr, err)
 					}
-					shellcflag = "-c"
+					return
 				}
-				cmd := exec.Command(shell, shellcflag, target)
-				cmd.Stdin = stdin
-				cmd.Stdout = stdout
-				cmd.Stderr = os.Stderr
-				err = cmd.Start()
-				if err != nil {
-					fmt.Fprintln(os.Stderr, err)
-				}
-				return
 			}
 		}
 	} else if *edit {
-		err = edit_file(target)
+		err = edit_file(selected)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 	} else if *cat {
-		f, err := os.Open(target)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+		for _, f := range selected {
+			f, err := os.Open(f)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				continue
+			}
+			io.Copy(os.Stdout, f)
+			f.Close()
 		}
-		defer f.Close()
-		io.Copy(os.Stdout, f)
 	} else if flag.NArg() > 0 {
 		args := flag.Args()
-		args = append(args, target)
+		args = append(args, selected...)
 		cmd := exec.Command(args[0], args[1:]...)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
@@ -549,6 +592,8 @@ loop:
 		}
 		cmd.Wait()
 	} else {
-		fmt.Println(target)
+		for _, f := range selected {
+			fmt.Println(f)
+		}
 	}
 }
