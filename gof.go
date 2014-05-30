@@ -305,7 +305,9 @@ func main() {
 	})
 	timer.Stop()
 
-	if !isatty() {
+	is_tty := isatty()
+
+	if !is_tty {
 		buf := bufio.NewReader(os.Stdin)
 		for {
 			b, _, err := buf.ReadLine()
@@ -348,7 +350,10 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	termbox.SetInputMode(termbox.InputEsc)
+
+	if is_tty {
+		termbox.SetInputMode(termbox.InputEsc)
+	}
 
 	filter()
 	draw_screen()
