@@ -309,27 +309,22 @@ func main() {
 
 	if !is_tty {
 		buf := bufio.NewReader(os.Stdin)
+		for {
+			b, _, err := buf.ReadLine()
+			if err != nil {
+				break
+			}
+			mutex.Lock()
+			files = append(files, string(b))
+			mutex.Unlock()
+			dirty = true
+			timer.Reset(duration)
+		}
 		err = tty_ready()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
-		quit = make(chan bool)
-		go func() {
-			for {
-				b, _, err := buf.ReadLine()
-				if err != nil {
-					break
-				}
-				mutex.Lock()
-				files = append(files, string(b))
-				mutex.Unlock()
-				dirty = true
-				timer.Reset(duration)
-			}
-			scanning = -1
-			quit <- true
-		}()
 	} else if *launcher {
 		home := os.Getenv("HOME")
 		if home == "" && runtime.GOOS == "windows" {
