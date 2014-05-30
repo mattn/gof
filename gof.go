@@ -28,6 +28,7 @@ var cat = flag.Bool("c", false, "Cat the file")
 var remove = flag.Bool("r", false, "Remove the file")
 var launcher = flag.Bool("l", false, "Launcher mode")
 var root = flag.String("d", "", "Root directory")
+var multi = flag.Bool("m", false, "Multiple select")
 
 func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
 	for _, c := range []rune(msg) {
@@ -462,6 +463,9 @@ loop:
 					selected = append(selected, current[cursor_y].name)
 				} else {
 					selected = append(selected[:found],  selected[found+1:]...)
+				}
+				if !*multi {
+					break loop
 				}
 				update = true
 			case termbox.KeyBackspace, termbox.KeyBackspace2:
