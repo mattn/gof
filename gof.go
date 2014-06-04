@@ -17,6 +17,7 @@ import (
 	"sync"
 	"time"
 
+	"code.google.com/p/mahonia"
 	"github.com/mattn/go-runewidth"
 	"github.com/nsf/termbox-go"
 )
@@ -308,7 +309,12 @@ func main() {
 	is_tty := isatty()
 
 	if !is_tty {
-		buf := bufio.NewReader(os.Stdin)
+		var buf *bufio.Reader
+		if enc := os.Getenv("GOFSTDINENC"); enc != "" {
+			buf = bufio.NewReader(mahonia.NewDecoder(enc).NewReader(os.Stdin))
+		} else {
+			buf = bufio.NewReader(os.Stdin)
+		}
 		for {
 			b, _, err := buf.ReadLine()
 			if err != nil {
