@@ -407,7 +407,7 @@ loop:
 		switch ev := termbox.PollEvent(); ev.Type {
 		case termbox.EventKey:
 			switch ev.Key {
-			case termbox.KeyEsc:
+			case termbox.KeyEsc, termbox.KeyCtrlD, termbox.KeyCtrlC:
 				termbox.Close()
 				os.Exit(1)
 			case termbox.KeyHome, termbox.KeyCtrlA:
