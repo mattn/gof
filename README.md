@@ -2,7 +2,7 @@
 
 Go Fuzzy
 
-![](https://gist.github.com/mattn/7393210/raw/a3b16e248e24749f850859a9bd01a5e6893ed914/gof.gif)
+![](http://i.imgur.com/TGZJyGV.gif)
 
 ## Installation
 
