@@ -65,9 +65,9 @@ func edit_file(files []string) error {
 }
 
 type matched struct {
-	name string
-	pos1 int
-	pos2 int
+	name     string
+	pos1     int
+	pos2     int
 	selected bool
 }
 
@@ -114,9 +114,9 @@ func filter() {
 				}
 			}
 			current[n] = matched{
-				name: f,
-				pos1: -1,
-				pos2: -1,
+				name:     f,
+				pos1:     -1,
+				pos2:     -1,
 				selected: prev_selected,
 			}
 		}
@@ -142,9 +142,9 @@ func filter() {
 				}
 			}
 			current = append(current, matched{
-				name: f,
-				pos1: len([]rune(f[0:ms[0][2]])),
-				pos2: len([]rune(f[0:ms[0][3]])),
+				name:     f,
+				pos1:     len([]rune(f[0:ms[0][2]])),
+				pos2:     len([]rune(f[0:ms[0][3]])),
 				selected: prev_selected,
 			})
 		}
@@ -442,6 +442,7 @@ loop:
 			case termbox.KeyCtrlO:
 				if cursor_y >= 0 && cursor_y < len(current) {
 					*edit = true
+					selected = append(selected, current[cursor_y].name)
 					break loop
 				}
 			case termbox.KeyCtrlI:
@@ -477,7 +478,7 @@ loop:
 				if found == -1 {
 					selected = append(selected, current[cursor_y].name)
 				} else {
-					selected = append(selected[:found],  selected[found+1:]...)
+					selected = append(selected[:found], selected[found+1:]...)
 				}
 				if !*multi {
 					break loop
