@@ -1,7 +1,11 @@
 function! gof#run(edit)
   if has("gui_running")
     let tmp = tempname()
-    silent exe "!gof > " . tmp
+    if has("win32")
+      silent exe "!gof > " . tmp
+    else
+      silent exe "!xterm -e gof > " . tmp
+    endif
     let files = readfile(tmp)
     call delete(tmp)
   else
