@@ -1,11 +1,9 @@
+let s:gof_launcher = get(g:, 'gof_launcher', has("win32") ? '' : 'xterm -e')
+
 function! gof#run(edit)
   if has("gui_running")
     let tmp = tempname()
-    if has("win32")
-      silent exe "!gof > " . tmp
-    else
-      silent exe "!xterm -e gof > " . tmp
-    endif
+    silent exe printf("!%s gof > %s", s:gof_launcher, tmp)
     let files = readfile(tmp)
     call delete(tmp)
   else
