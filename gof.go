@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"golang.org/x/text/transform"
 	"io"
 	"io/ioutil"
 	"os"
@@ -17,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"code.google.com/p/mahonia"
+	enc "github.com/mattn/go-encoding"
 	"github.com/mattn/go-runewidth"
 	"github.com/nsf/termbox-go"
 )
@@ -309,8 +310,12 @@ func main() {
 
 	if !is_tty {
 		var buf *bufio.Reader
-		if enc := os.Getenv("GOFSTDINENC"); enc != "" {
-			buf = bufio.NewReader(mahonia.NewDecoder(enc).NewReader(os.Stdin))
+		if se := os.Getenv("GOFSTDINENC"); se != "" {
+			if e := enc.GetEncoding(se); e != nil {
+				buf = bufio.NewReader(transform.NewReader(os.Stdin, e.NewDecoder().Transformer))
+			} else {
+				buf = bufio.NewReader(os.Stdin)
+			}
 		} else {
 			buf = bufio.NewReader(os.Stdin)
 		}
