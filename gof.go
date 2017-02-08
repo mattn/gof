@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"golang.org/x/text/transform"
 	"io"
 	"io/ioutil"
 	"os"
@@ -18,6 +17,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/text/transform"
+
 	enc "github.com/mattn/go-encoding"
 	"github.com/mattn/go-runewidth"
 	"github.com/nsf/termbox-go"
@@ -25,11 +26,13 @@ import (
 
 var duration = 10 * time.Millisecond
 
-var edit = flag.Bool("e", false, "Edit selected file")
-var cat = flag.Bool("c", false, "Cat the file")
-var remove = flag.Bool("r", false, "Remove the file")
-var launcher = flag.Bool("l", false, "Launcher mode")
-var root = flag.String("d", "", "Root directory")
+var (
+	edit     = flag.Bool("e", false, "Edit selected file")
+	cat      = flag.Bool("c", false, "Cat the file")
+	remove   = flag.Bool("r", false, "Remove the file")
+	launcher = flag.Bool("l", false, "Launcher mode")
+	root     = flag.String("d", "", "Root directory")
+)
 
 func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
 	for _, c := range []rune(msg) {
@@ -547,7 +550,7 @@ loop:
 		os.Exit(1)
 	}
 
-	if !*launcher {
+	if *edit || *cat || *remove {
 		for i, f := range selected {
 			selected[i] = filepath.Join(cwd, f)
 		}
