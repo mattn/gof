@@ -32,6 +32,7 @@ var (
 	remove   = flag.Bool("r", false, "Remove the file")
 	launcher = flag.Bool("l", false, "Launcher mode")
 	root     = flag.String("d", "", "Root directory")
+	exit     = flag.Int("x", 1, "Exit code for cancel")
 )
 
 func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
@@ -416,7 +417,7 @@ loop:
 			switch ev.Key {
 			case termbox.KeyEsc, termbox.KeyCtrlD, termbox.KeyCtrlC:
 				termbox.Close()
-				os.Exit(1)
+				os.Exit(*exit)
 			case termbox.KeyHome, termbox.KeyCtrlA:
 				cursor_x = 0
 			case termbox.KeyEnd, termbox.KeyCtrlE:
@@ -547,7 +548,7 @@ loop:
 	tty_term()
 
 	if len(selected) == 0 {
-		os.Exit(1)
+		os.Exit(*exit)
 	}
 
 	if *edit || *cat || *remove {
