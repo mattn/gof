@@ -65,6 +65,16 @@ $ find /tmp | gof
 |-x       |Exit code for cancel (default: 1)|
 |-d [path]|Speciry root directory           |
 
+## Launcher Mode
+
+Put `~/.gof-launcher`
+
+```
+[name]	[command]
+```
+
+`name` and `command` should be separated by TAB. `gof -l` launch `command`s for selected `name`.
+
 ## License
 
 MIT
