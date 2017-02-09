@@ -258,7 +258,7 @@ func main() {
 	var err error
 	cwd := ""
 
-	if flag.NFlag() == 0 && flag.NArg() == 1 {
+	if flag.NArg() == 1 {
 		*root = flag.Arg(0)
 	}
 
