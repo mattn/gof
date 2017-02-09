@@ -63,7 +63,7 @@ $ find /tmp | gof
 |-        |Remove the selected file         |
 |-l       |Launcher mode                    |
 |-x       |Exit code for cancel (default: 1)|
-|-d [path]|Speciry root directory           |
+|-d [path]|Specify root directory           |
 
 ## Launcher Mode
 
