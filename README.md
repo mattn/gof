@@ -73,7 +73,13 @@ Put `~/.gof-launcher`
 [name]	[command]
 ```
 
-`name` and `command` should be separated by TAB. `gof -l` launch `command`s for selected `name`.
+`name` and `command` should be separated by TAB. `gof -l` launch `command`s for selected `name`. Below is a my `.gof-launcher` file.
+
+```
+Vim	gvim
+Emacs	emacs
+GIMP	gimp
+```
 
 ## License
 
