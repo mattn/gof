@@ -35,24 +35,24 @@ $ find /tmp | gof
 
 ## Key Assign
 
-|Key              |Description                         |
-|-----------------|------------------------------------|
-|CTRL-K,ARROW-UP  |Move-up line                        |
-|CTRL-J,ARROW-DOWN|Move-down line                      |
-|CTRL-A,HOME      |Go to head of prompt                |
-|CTRL-E,END       |Go to trail of prompt               |
-|ARROW-LEFT       |Move-left cursor                    |
-|ARROW-RIGHT      |Move-right cursor                   |
-|CTRL-O           |Edit file selected                  |
-|CTRL-I           |Toggle view header/trailing of lines|
-|CTRL-L           |Redraw                              |
-|CTRL-U           |Clear prompt                        |
-|CTRL-W           |Remove backward word                |
-|BS               |Remove backward character           |
-|DEL              |Delete character on the cursor      |
-|CTRL-Z           |Toggle selection                    |
-|Enter            |Decide                              |
-|CTRL-D,CTRL-C,ESC|Cancel                              |
+|Key                                               |Description                         |
+|--------------------------------------------------|------------------------------------|
+|<kbd>CTRL-K</kbd>,<kbd>ARROW-UP</kbd>             |Move-up line                        |
+|<kbd>CTRL-J</kbd>,<kbd>ARROW-DOWN</kbd>           |Move-down line                      |
+|<kbd>CTRL-A</kbd>,<kbd>HOME</kbd>                 |Go to head of prompt                |
+|<kbd>CTRL-E</kbd>,<kbd>END</kbd>                  |Go to trail of prompt               |
+|<kbd>ARROW-LEFT</kbd>                             |Move-left cursor                    |
+|<kbd>ARROW-RIGHT</kbd>                            |Move-right cursor                   |
+|<kbd>CTRL-O</kbd>                                 |Edit file selected                  |
+|<kbd>CTRL-I</kbd>                                 |Toggle view header/trailing of lines|
+|<kbd>CTRL-L</kbd>                                 |Redraw                              |
+|<kbd>CTRL-U</kbd>                                 |Clear prompt                        |
+|<kbd>CTRL-W</kbd>                                 |Remove backward word                |
+|<kbd>BS</kbd>                                     |Remove backward character           |
+|<kbd>DEL</kbd>                                    |Delete character on the cursor      |
+|<kbd>CTRL-Z</kbd>                                 |Toggle selection                    |
+|<kbd>Enter</kbd>                                  |Decide                              |
+|<kbd>CTRL-D</kbd>,<kbd>CTRL-C</kbd>,<kbd>ESC</kbd>|Cancel                              |
 
 ## Options
 
