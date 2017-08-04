@@ -437,13 +437,13 @@ loop:
 				if cursor_x < len([]rune(input)) {
 					cursor_x++
 				}
-			case termbox.KeyArrowUp, termbox.KeyCtrlK:
+			case termbox.KeyArrowUp, termbox.KeyCtrlK, termbox.KeyCtrlP:
 				if cursor_y < len(current)-1 {
 					if cursor_y < height-4 {
 						cursor_y++
 					}
 				}
-			case termbox.KeyArrowDown, termbox.KeyCtrlJ:
+			case termbox.KeyArrowDown, termbox.KeyCtrlJ, termbox.KeyCtrlN:
 				if cursor_y > 0 {
 					cursor_y--
 				}
