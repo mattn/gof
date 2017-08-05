@@ -75,29 +75,17 @@ type matched struct {
 	selected bool
 }
 
-type filtered []matched
-
-func (f filtered) Less(i, j int) bool {
-	return (f[i].pos2 - f[i].pos1) < (f[j].pos2 - f[j].pos1)
-}
-
-func (f filtered) Len() int {
-	return len(f)
-}
-
-func (f filtered) Swap(i, j int) {
-	f[i], f[j] = f[j], f[i]
-}
-
-var input = []rune{}
-var files = []string{}
-var selected = []string{}
-var heading = false
-var current filtered
-var cursor_x, cursor_y int
-var width, height int
-var mutex sync.Mutex
-var launcherFiles = []string{}
+var (
+	input              = []rune{}
+	files              = []string{}
+	selected           = []string{}
+	heading            = false
+	current            []matched
+	cursor_x, cursor_y int
+	width, height      int
+	mutex              sync.Mutex
+	launcherFiles      = []string{}
+)
 
 func filter() {
 	mutex.Lock()
@@ -108,7 +96,7 @@ func filter() {
 	}()
 
 	if len(input) == 0 {
-		current = make(filtered, len(files))
+		current = make([]matched, len(files))
 		for n, f := range files[0:len(current)] {
 			prev_selected := false
 			for _, s := range selected {
@@ -132,7 +120,7 @@ func filter() {
 		pat += ")"
 		re := regexp.MustCompile(pat)
 
-		current = make(filtered, 0, len(files))
+		current = make([]matched, 0, len(files))
 		for _, f := range files {
 			ms := re.FindAllStringSubmatchIndex(f, 1)
 			if len(ms) != 1 || len(ms[0]) != 4 {
@@ -154,7 +142,10 @@ func filter() {
 		}
 	}
 	if len(input) > 0 {
-		sort.Sort(current)
+		sort.Slice(current, func(i, j int) bool {
+			return current[i].pos1 < current[j].pos1 &&
+				(current[i].pos2-current[i].pos1) < (current[j].pos2-current[j].pos1)
+		})
 	}
 	if cursor_y < 0 {
 		cursor_y = 0
