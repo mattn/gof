@@ -25,7 +25,7 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
-var duration = 10 * time.Millisecond
+var duration = 20 * time.Millisecond
 
 var (
 	edit     = flag.Bool("e", false, "Edit selected file")
@@ -144,8 +144,12 @@ func filter() {
 	}
 	if len(inp) > 0 {
 		sort.Slice(tmp, func(i, j int) bool {
-			return tmp[i].pos1 < tmp[j].pos1 &&
-				(tmp[i].pos2-tmp[i].pos1) < (tmp[j].pos2-tmp[j].pos1)
+			if (tmp[i].pos2 - tmp[i].pos1) < (tmp[j].pos2 - tmp[j].pos1) {
+				return true
+			} else if tmp[i].pos1 < tmp[j].pos1 {
+				return true
+			}
+			return false
 		})
 	}
 
@@ -293,10 +297,15 @@ func main() {
 	var quit chan bool
 
 	timer := time.AfterFunc(0, func() {
-		if dirty {
+		mutex.Lock()
+		d := dirty
+		mutex.Unlock()
+		if d {
 			filter()
 			draw_screen()
+			mutex.Lock()
 			dirty = false
+			mutex.Unlock()
 		} else {
 			draw_screen()
 		}
@@ -327,6 +336,8 @@ func main() {
 				mutex.Unlock()
 				dirty = true
 				timer.Reset(duration)
+			}
+			if !dirty {
 			}
 		}()
 		err = tty_ready()
@@ -386,9 +397,9 @@ func main() {
 					path = filepath.ToSlash(path)
 					mutex.Lock()
 					files = append(files, path)
-					mutex.Unlock()
 					dirty = true
 					timer.Reset(duration)
+					mutex.Unlock()
 				} else if strings.HasPrefix(filepath.Base(path), ".") {
 					return filepath.SkipDir
 				}
@@ -514,8 +525,10 @@ loop:
 		// If need to update, start timer
 		if scanning != -1 {
 			if update {
+				mutex.Lock()
 				dirty = true
 				timer.Reset(duration)
+				mutex.Unlock()
 			} else {
 				timer.Reset(1)
 			}
