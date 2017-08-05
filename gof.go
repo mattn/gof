@@ -90,23 +90,23 @@ var (
 
 func filter() {
 	mutex.Lock()
-	defer mutex.Unlock()
+	fs := files
+	inp := input
+	sel := selected
+	mutex.Unlock()
 
-	defer func() {
-		recover()
-	}()
-
-	if len(input) == 0 {
-		current = make([]matched, len(files))
-		for n, f := range files[0:len(current)] {
+	var tmp []matched
+	if len(inp) == 0 {
+		tmp = make([]matched, len(fs))
+		for n, f := range fs {
 			prev_selected := false
-			for _, s := range selected {
+			for _, s := range sel {
 				if f == s {
 					prev_selected = true
 					break
 				}
 			}
-			current[n] = matched{
+			tmp[n] = matched{
 				name:     f,
 				pos1:     -1,
 				pos2:     -1,
@@ -115,26 +115,26 @@ func filter() {
 		}
 	} else {
 		pat := "(?i)(?:.*)("
-		for _, r := range []rune(input) {
+		for _, r := range []rune(inp) {
 			pat += regexp.QuoteMeta(string(r)) + ".*?"
 		}
 		pat += ")"
 		re := regexp.MustCompile(pat)
 
-		current = make([]matched, 0, len(files))
-		for _, f := range files {
+		tmp = make([]matched, 0, len(fs))
+		for _, f := range fs {
 			ms := re.FindAllStringSubmatchIndex(f, 1)
 			if len(ms) != 1 || len(ms[0]) != 4 {
 				continue
 			}
 			prev_selected := false
-			for _, s := range selected {
+			for _, s := range sel {
 				if f == s {
 					prev_selected = true
 					break
 				}
 			}
-			current = append(current, matched{
+			tmp = append(tmp, matched{
 				name:     f,
 				pos1:     len([]rune(f[0:ms[0][2]])),
 				pos2:     len([]rune(f[0:ms[0][3]])),
@@ -142,12 +142,17 @@ func filter() {
 			})
 		}
 	}
-	if len(input) > 0 {
-		sort.Slice(current, func(i, j int) bool {
-			return current[i].pos1 < current[j].pos1 &&
-				(current[i].pos2-current[i].pos1) < (current[j].pos2-current[j].pos1)
+	if len(inp) > 0 {
+		sort.Slice(tmp, func(i, j int) bool {
+			return tmp[i].pos1 < tmp[j].pos1 &&
+				(tmp[i].pos2-tmp[i].pos1) < (tmp[j].pos2-tmp[j].pos1)
 		})
 	}
+
+	mutex.Lock()
+	defer mutex.Unlock()
+	current = tmp
+	selected = sel
 	if cursor_y < 0 {
 		cursor_y = 0
 	}
@@ -162,10 +167,6 @@ var drawing = false
 func draw_screen() {
 	mutex.Lock()
 	defer mutex.Unlock()
-
-	defer func() {
-		recover()
-	}()
 
 	width, height = termbox.Size()
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
