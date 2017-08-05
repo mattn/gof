@@ -315,17 +315,19 @@ func main() {
 		} else {
 			buf = bufio.NewReader(os.Stdin)
 		}
-		for {
-			b, _, err := buf.ReadLine()
-			if err != nil {
-				break
+		go func() {
+			for {
+				b, _, err := buf.ReadLine()
+				if err != nil {
+					break
+				}
+				mutex.Lock()
+				files = append(files, string(b))
+				mutex.Unlock()
+				dirty = true
+				timer.Reset(duration)
 			}
-			mutex.Lock()
-			files = append(files, string(b))
-			mutex.Unlock()
-			dirty = true
-			timer.Reset(duration)
-		}
+		}()
 		err = tty_ready()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
