@@ -21,6 +21,7 @@ import (
 
 	enc "github.com/mattn/go-encoding"
 	"github.com/mattn/go-runewidth"
+	"github.com/mattn/gof/fastwalk"
 	"github.com/nsf/termbox-go"
 )
 
@@ -371,12 +372,9 @@ func main() {
 	if len(files) == 0 {
 		quit = make(chan bool)
 		go func() {
-			filepath.Walk(cwd, func(path string, info os.FileInfo, err error) error {
+			fastwalk.FastWalk(cwd, func(path string, info os.FileMode) error {
 				if terminating {
 					return errors.New("terminate")
-				}
-				if info == nil {
-					return err
 				}
 				if !info.IsDir() {
 					if p, err := filepath.Rel(cwd, path); err == nil {
@@ -388,7 +386,7 @@ func main() {
 					mutex.Unlock()
 					dirty = true
 					timer.Reset(duration)
-				} else if strings.HasPrefix(info.Name(), ".") {
+				} else if strings.HasPrefix(filepath.Base(path), ".") {
 					return filepath.SkipDir
 				}
 				return nil
