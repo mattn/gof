@@ -32,6 +32,7 @@ var (
 	cat      = flag.Bool("c", false, "Cat the file")
 	remove   = flag.Bool("r", false, "Remove the file")
 	launcher = flag.Bool("l", false, "Launcher mode")
+	fuzzy    = flag.Bool("f", false, "Fuzzy match")
 	root     = flag.String("d", "", "Root directory")
 	exit     = flag.Int("x", 1, "Exit code for cancel")
 )
@@ -113,7 +114,7 @@ func filter() {
 				selected: prev_selected,
 			}
 		}
-	} else {
+	} else if *fuzzy {
 		pat := "(?i)(?:.*)("
 		for _, r := range []rune(inp) {
 			pat += regexp.QuoteMeta(string(r)) + ".*?"
@@ -138,6 +139,28 @@ func filter() {
 				name:     f,
 				pos1:     len([]rune(f[0:ms[0][2]])),
 				pos2:     len([]rune(f[0:ms[0][3]])),
+				selected: prev_selected,
+			})
+		}
+	} else {
+		tmp = make([]matched, 0, len(fs))
+		for _, f := range fs {
+			pos := strings.Index(f, string(inp))
+			if pos == -1 {
+				continue
+			}
+			prev_selected := false
+			for _, s := range sel {
+				if f == s {
+					prev_selected = true
+					break
+				}
+			}
+			pos1 := len([]rune(f[:pos]))
+			tmp = append(tmp, matched{
+				name:     f,
+				pos1:     pos1,
+				pos2:     pos1 + len(inp),
 				selected: prev_selected,
 			})
 		}
