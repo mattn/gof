@@ -79,7 +79,7 @@ type matched struct {
 
 var (
 	input              = []rune{}
-	files              = []string{}
+	files              []string
 	selected           = []string{}
 	heading            = false
 	current            []matched
@@ -360,7 +360,8 @@ func main() {
 				dirty = true
 				timer.Reset(duration)
 			}
-			if !dirty {
+			if files == nil {
+				files = []string{}
 			}
 		}()
 		err = tty_ready()
@@ -406,7 +407,7 @@ func main() {
 	draw_screen()
 
 	// Walk and collect files recursively.
-	if len(files) == 0 {
+	if files == nil {
 		quit = make(chan bool)
 		go func() {
 			fastwalk.FastWalk(cwd, func(path string, info os.FileMode) error {
