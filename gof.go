@@ -194,6 +194,9 @@ var scanning = 0
 var drawing = false
 
 func draw_screen() {
+	defer func() {
+		recover()
+	}()
 	mutex.Lock()
 	defer mutex.Unlock()
 
