@@ -145,8 +145,9 @@ func filter() {
 		}
 	} else {
 		tmp = make([]matched, 0, len(fs))
+		inpl := strings.ToLower(string(inp))
 		for _, f := range fs {
-			pos := strings.Index(f, string(inp))
+			pos := strings.Index(strings.ToLower(f), inpl)
 			if pos == -1 {
 				continue
 			}
