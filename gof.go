@@ -704,7 +704,7 @@ loop:
 		}
 		cmd.Wait()
 	} else {
-		if actionKey != "" {
+		if *action != "" {
 			fmt.Println(actionKey)
 		}
 		for _, f := range selected {
