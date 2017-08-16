@@ -35,6 +35,7 @@ var (
 	fuzzy    = flag.Bool("f", false, "Fuzzy match")
 	root     = flag.String("d", "", "Root directory")
 	exit     = flag.Int("x", 1, "Exit code for cancel")
+	action   = flag.String("a", "", "Action keys")
 )
 
 func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
@@ -273,6 +274,35 @@ func draw_screen() {
 	termbox.Flush()
 }
 
+var actionKeys = []termbox.Key{
+	termbox.KeyCtrlA,
+	termbox.KeyCtrlB,
+	termbox.KeyCtrlC,
+	termbox.KeyCtrlD,
+	termbox.KeyCtrlE,
+	termbox.KeyCtrlF,
+	termbox.KeyCtrlG,
+	termbox.KeyCtrlH,
+	termbox.KeyCtrlI,
+	termbox.KeyCtrlJ,
+	termbox.KeyCtrlK,
+	termbox.KeyCtrlL,
+	termbox.KeyCtrlM,
+	termbox.KeyCtrlN,
+	termbox.KeyCtrlO,
+	termbox.KeyCtrlP,
+	termbox.KeyCtrlQ,
+	termbox.KeyCtrlR,
+	termbox.KeyCtrlS,
+	termbox.KeyCtrlT,
+	termbox.KeyCtrlU,
+	termbox.KeyCtrlV,
+	termbox.KeyCtrlW,
+	termbox.KeyCtrlX,
+	termbox.KeyCtrlY,
+	termbox.KeyCtrlZ,
+}
+
 func main() {
 	flag.Parse()
 
@@ -434,6 +464,8 @@ func main() {
 		}()
 	}
 
+	actionKey := ""
+
 loop:
 	for {
 		update := false
@@ -441,6 +473,22 @@ loop:
 		// Polling key events
 		switch ev := termbox.PollEvent(); ev.Type {
 		case termbox.EventKey:
+			for _, ka := range strings.Split(*action, ",") {
+				for i, kv := range actionKeys {
+					if ev.Key == kv {
+						ak := fmt.Sprintf("ctrl-%c", 'a'+i)
+						if ka == ak {
+							if cursor_y >= 0 && cursor_y < len(current) {
+								if len(selected) == 0 {
+									selected = append(selected, current[cursor_y].name)
+								}
+								actionKey = ak
+								break loop
+							}
+						}
+					}
+				}
+			}
 			switch ev.Key {
 			case termbox.KeyEsc, termbox.KeyCtrlD, termbox.KeyCtrlC:
 				termbox.Close()
@@ -656,6 +704,9 @@ loop:
 		}
 		cmd.Wait()
 	} else {
+		if actionKey != "" {
+			fmt.Println(actionKey)
+		}
 		for _, f := range selected {
 			fmt.Println(f)
 		}
