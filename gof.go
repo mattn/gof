@@ -385,9 +385,7 @@ func main() {
 		} else {
 			buf = bufio.NewReader(os.Stdin)
 		}
-		if files == nil {
-			files = []string{}
-		}
+		files = []string{}
 		go func() {
 			for {
 				b, _, err := buf.ReadLine()
