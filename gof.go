@@ -385,6 +385,9 @@ func main() {
 		} else {
 			buf = bufio.NewReader(os.Stdin)
 		}
+		if files == nil {
+			files = []string{}
+		}
 		go func() {
 			for {
 				b, _, err := buf.ReadLine()
@@ -396,9 +399,6 @@ func main() {
 				mutex.Unlock()
 				dirty = true
 				timer.Reset(duration)
-			}
-			if files == nil {
-				files = []string{}
 			}
 		}()
 		err = tty_ready()
