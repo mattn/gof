@@ -6,7 +6,7 @@ Go Fuzzy
 
 [Open files in Vim directly (inside Vim terminal)](#vim-terminal-api)
 
-![](https://i.imgur.com/g81MCyr.gif)
+![](https://i.imgur.com/pRhl9o3.gif)
 
 ## Installation
 
@@ -119,7 +119,7 @@ if executable('gof')
 endif
 ```
 
-![](https://i.imgur.com/dJ8ypKT.gif)
+![](https://i.imgur.com/jvfuOxh.gif)
 
 ## License
 
