@@ -4,6 +4,10 @@ Go Fuzzy
 
 ![](http://i.imgur.com/TGZJyGV.gif)
 
+[Open files in Vim directly (inside Vim terminal)](#vim-terminal-api)
+
+![](https://i.imgur.com/g81MCyr.gif)
+
 ## Installation
 
     $ go get github.com/mattn/gof
@@ -56,14 +60,16 @@ $ find /tmp | gof
 
 ## Options
 
-|Option   |Description                      |
-|---------|---------------------------------|
-|-c       |Cat the selected file            |
-|-e       |Edit the selected file           |
-|-        |Remove the selected file         |
-|-l       |Launcher mode                    |
-|-x       |Exit code for cancel (default: 1)|
-|-d [path]|Specify root directory           |
+|Option     |Description                             |
+|-----------|----------------------------------------|
+|-c         |Cat the selected file                   |
+|-e         |Edit the selected file                  |
+|-          |Remove the selected file                |
+|-l         |Launcher mode                           |
+|-x         |Exit code for cancel (default: 1)       |
+|-d [path]  |Specify root directory                  |
+|-t         |Open via Vim's Terminal API             |
+|-T [prefix]|Terminal API's prefix (default: "Tapi_")|
 
 ## Launcher Mode
 
@@ -80,6 +86,29 @@ Vim	gvim
 Emacs	emacs
 GIMP	gimp
 ```
+
+## Vim Terminal API
+
+`gof -t` or `gof -T [prefix]` opens selected files in Vim using [Terminal
+API](https://vim-jp.org/vimdoc-en/terminal.html#terminal-api).
+This option is ignored when `-l`, `-e`, `-c`, `-r`, or 1 or more non-option
+argument were supplied.
+
+If you want to add `-t` option automatically whether you are inside Vim terminal
+or not, you can define alias like this.
+
+```sh
+gof() {
+  if [ "$VIM_TERMINAL" ]; then
+    gof -t "$@"
+  else
+    gof "$@"
+  fi
+}
+```
+
+If you use `term_setapi()` in your Vim, use `gof -T [prefix]` to specify the
+prefix (but maybe you never use this function :sweat_smile:).
 
 ## License
 
