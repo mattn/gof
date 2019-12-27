@@ -89,13 +89,13 @@ GIMP	gimp
 
 ## Vim Terminal API
 
-`gof -t` or `gof -T [prefix]` opens selected files in Vim using [Terminal
-API](https://vim-jp.org/vimdoc-en/terminal.html#terminal-api).
-This option is ignored when `-l`, `-e`, `-c`, `-r`, or 1 or more non-option
-argument were supplied.
+* `gof -t` or `gof -T [prefix]` opens selected files in Vim using [Terminal
+  API](https://vim-jp.org/vimdoc-en/terminal.html#terminal-api).  This option is
+  ignored when `-l`, `-e`, `-c`, `-r`, or 1 or more non-option argument were
+  supplied
 
-If you want to add `-t` option automatically whether you are inside Vim terminal
-or not, you can define alias like this.
+* If you want to add `-t` option automatically whether you are inside Vim
+  terminal or not, you can define alias like this
 
 ```sh
 gof() {
@@ -107,8 +107,19 @@ gof() {
 }
 ```
 
-If you use `term_setapi()` in your Vim, use `gof -T [prefix]` to specify the
-prefix (but maybe you never use this function :sweat_smile:).
+* If you use `term_setapi()` in your Vim, use `gof -T [prefix]` to specify the
+  prefix (but maybe you never use this function :sweat_smile:)
+
+* You can define utility Vim command `:Gof`. Quickly calls `gof -t` command and
+  opens selected files in Vim buffer
+
+```vim
+if executable('gof')
+  command! -nargs=* Gof term ++close gof -t
+endif
+```
+
+![](https://i.imgur.com/dJ8ypKT.gif)
 
 ## License
 
