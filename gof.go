@@ -28,14 +28,16 @@ import (
 var duration = 20 * time.Millisecond
 
 var (
-	edit     = flag.Bool("e", false, "Edit selected file")
-	cat      = flag.Bool("c", false, "Cat the file")
-	remove   = flag.Bool("r", false, "Remove the file")
-	launcher = flag.Bool("l", false, "Launcher mode")
-	fuzzy    = flag.Bool("f", false, "Fuzzy match")
-	root     = flag.String("d", "", "Root directory")
-	exit     = flag.Int("x", 1, "Exit code for cancel")
-	action   = flag.String("a", "", "Action keys")
+	edit              = flag.Bool("e", false, "Edit selected file")
+	cat               = flag.Bool("c", false, "Cat the file")
+	remove            = flag.Bool("r", false, "Remove the file")
+	launcher          = flag.Bool("l", false, "Launcher mode")
+	fuzzy             = flag.Bool("f", false, "Fuzzy match")
+	root              = flag.String("d", "", "Root directory")
+	exit              = flag.Int("x", 1, "Exit code for cancel")
+	action            = flag.String("a", "", "Action keys")
+	terminalApi       = flag.Bool("t", false, "Open via Vim's Terminal API")
+	terminalApiPrefix = flag.String("T", "Tapi_", "Terminal API's prefix")
 )
 
 func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
@@ -318,6 +320,14 @@ func main() {
 
 	if flag.NArg() == 1 {
 		*root = flag.Arg(0)
+	}
+
+	*terminalApi = *terminalApiPrefix != "" && (*terminalApi || *terminalApiPrefix != "Tapi_")
+	if *terminalApi {
+		if os.Getenv("VIM_TERMINAL") == "" {
+			fmt.Fprintln(os.Stderr, "-t,-T option is only available inside Vim's terminal window")
+			os.Exit(1)
+		}
 	}
 
 	if *root == "" {
@@ -709,11 +719,17 @@ loop:
 		}
 		cmd.Wait()
 	} else {
-		if *action != "" {
-			fmt.Println(actionKey)
-		}
-		for _, f := range selected {
-			fmt.Println(f)
+		if *terminalApi {
+			for _, f := range selected {
+				fmt.Printf("\x1b]51;[\"drop\",\"%s\"]\x07", f)
+			}
+		} else {
+			if *action != "" {
+				fmt.Println(actionKey)
+			}
+			for _, f := range selected {
+				fmt.Println(f)
+			}
 		}
 	}
 }
