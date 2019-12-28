@@ -100,9 +100,9 @@ GIMP	gimp
 ```sh
 gof() {
   if [ "$VIM_TERMINAL" ]; then
-    gof -t "$@"
+    command gof -t "$@"
   else
-    gof "$@"
+    command gof "$@"
   fi
 }
 ```
