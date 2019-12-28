@@ -726,6 +726,9 @@ loop:
 				if *terminalApiFuncname != "" {
 					command = append(command, "call", *terminalApiFuncname, newVimTapiCall(cwd, f))
 				} else {
+					if !filepath.IsAbs(f) {
+						f = filepath.Join(cwd, f)
+					}
 					command = append(command, "drop", f)
 				}
 				b, err := json.Marshal(command)
