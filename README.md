@@ -4,6 +4,10 @@ Go Fuzzy
 
 ![](http://i.imgur.com/TGZJyGV.gif)
 
+[Open files in Vim directly (inside Vim terminal)](#vim-terminal-api)
+
+![](https://i.imgur.com/pRhl9o3.gif)
+
 ## Installation
 
     $ go get github.com/mattn/gof
@@ -56,14 +60,16 @@ $ find /tmp | gof
 
 ## Options
 
-|Option   |Description                      |
-|---------|---------------------------------|
-|-c       |Cat the selected file            |
-|-e       |Edit the selected file           |
-|-        |Remove the selected file         |
-|-l       |Launcher mode                    |
-|-x       |Exit code for cancel (default: 1)|
-|-d [path]|Specify root directory           |
+|Option        |Description                      |
+|--------------|---------------------------------|
+|-c            |Cat the selected file            |
+|-e            |Edit the selected file           |
+|-             |Remove the selected file         |
+|-l            |Launcher mode                    |
+|-x            |Exit code for cancel (default: 1)|
+|-d [path]     |Specify root directory           |
+|-t            |Open via Vim's Terminal API      |
+|-tf [funcname]|Terminal API's function name     |
 
 ## Launcher Mode
 
@@ -80,6 +86,39 @@ Vim	gvim
 Emacs	emacs
 GIMP	gimp
 ```
+
+## Vim Terminal API
+
+* `gof -t` or `gof -tf [prefix]` opens selected files in Vim using [Terminal
+  API](https://vim-jp.org/vimdoc-en/terminal.html#terminal-api).  This option is
+  ignored when `-l`, `-e`, `-c`, `-r`, or 1 or more non-option argument were
+  supplied
+
+* If you want to add `-t` option automatically whether you are inside Vim
+  terminal or not, you can define alias like this
+
+```sh
+gof() {
+  if [ "$VIM_TERMINAL" ]; then
+    gof -t "$@"
+  else
+    gof "$@"
+  fi
+}
+```
+
+* If you are familiar with Vim script, you may want to send `["call", "[funcname]", "[filename]"]` instead of `["drop", "[filename]"]`. You can use `gof -tf [funcname]` to send `call` command
+
+* You can define utility Vim command `:Gof`. Quickly calls `gof -t` command and
+  opens selected files in Vim buffer
+
+```vim
+if executable('gof')
+  command! -nargs=* Gof term ++close gof -t
+endif
+```
+
+![](https://i.imgur.com/jvfuOxh.gif)
 
 ## License
 
