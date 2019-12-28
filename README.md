@@ -60,16 +60,16 @@ $ find /tmp | gof
 
 ## Options
 
-|Option     |Description                             |
-|-----------|----------------------------------------|
-|-c         |Cat the selected file                   |
-|-e         |Edit the selected file                  |
-|-          |Remove the selected file                |
-|-l         |Launcher mode                           |
-|-x         |Exit code for cancel (default: 1)       |
-|-d [path]  |Specify root directory                  |
-|-t         |Open via Vim's Terminal API             |
-|-T [prefix]|Terminal API's prefix (default: "Tapi_")|
+|Option        |Description                      |
+|--------------|---------------------------------|
+|-c            |Cat the selected file            |
+|-e            |Edit the selected file           |
+|-             |Remove the selected file         |
+|-l            |Launcher mode                    |
+|-x            |Exit code for cancel (default: 1)|
+|-d [path]     |Specify root directory           |
+|-t            |Open via Vim's Terminal API      |
+|-tf [funcname]|Terminal API's function name     |
 
 ## Launcher Mode
 
@@ -89,7 +89,7 @@ GIMP	gimp
 
 ## Vim Terminal API
 
-* `gof -t` or `gof -T [prefix]` opens selected files in Vim using [Terminal
+* `gof -t` or `gof -tf [prefix]` opens selected files in Vim using [Terminal
   API](https://vim-jp.org/vimdoc-en/terminal.html#terminal-api).  This option is
   ignored when `-l`, `-e`, `-c`, `-r`, or 1 or more non-option argument were
   supplied
@@ -107,8 +107,7 @@ gof() {
 }
 ```
 
-* If you use `term_setapi()` in your Vim, use `gof -T [prefix]` to specify the
-  prefix (but maybe you never use this function :sweat_smile:)
+* If you are familiar with Vim script, you may want to send `["call", "[funcname]", "[filename]"]` instead of `["drop", "[filename]"]`. You can use `gof -tf [funcname]` to send `call` command
 
 * You can define utility Vim command `:Gof`. Quickly calls `gof -t` command and
   opens selected files in Vim buffer

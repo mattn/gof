@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -28,16 +29,16 @@ import (
 var duration = 20 * time.Millisecond
 
 var (
-	edit              = flag.Bool("e", false, "Edit selected file")
-	cat               = flag.Bool("c", false, "Cat the file")
-	remove            = flag.Bool("r", false, "Remove the file")
-	launcher          = flag.Bool("l", false, "Launcher mode")
-	fuzzy             = flag.Bool("f", false, "Fuzzy match")
-	root              = flag.String("d", "", "Root directory")
-	exit              = flag.Int("x", 1, "Exit code for cancel")
-	action            = flag.String("a", "", "Action keys")
-	terminalApi       = flag.Bool("t", false, "Open via Vim's Terminal API")
-	terminalApiPrefix = flag.String("T", "Tapi_", "Terminal API's prefix")
+	edit                = flag.Bool("e", false, "Edit selected file")
+	cat                 = flag.Bool("c", false, "Cat the file")
+	remove              = flag.Bool("r", false, "Remove the file")
+	launcher            = flag.Bool("l", false, "Launcher mode")
+	fuzzy               = flag.Bool("f", false, "Fuzzy match")
+	root                = flag.String("d", "", "Root directory")
+	exit                = flag.Int("x", 1, "Exit code for cancel")
+	action              = flag.String("a", "", "Action keys")
+	terminalApi         = flag.Bool("t", false, "Open via Vim's Terminal API")
+	terminalApiFuncname = flag.String("tf", "", "Terminal API's function name")
 )
 
 func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
@@ -322,10 +323,10 @@ func main() {
 		*root = flag.Arg(0)
 	}
 
-	*terminalApi = *terminalApiPrefix != "" && (*terminalApi || *terminalApiPrefix != "Tapi_")
+	*terminalApi = *terminalApi || *terminalApiFuncname != ""
 	if *terminalApi {
 		if os.Getenv("VIM_TERMINAL") == "" {
-			fmt.Fprintln(os.Stderr, "-t,-T option is only available inside Vim's terminal window")
+			fmt.Fprintln(os.Stderr, "-t,-tf option is only available inside Vim's terminal window")
 			os.Exit(1)
 		}
 	}
@@ -721,7 +722,18 @@ loop:
 	} else {
 		if *terminalApi {
 			for _, f := range selected {
-				fmt.Printf("\x1b]51;[\"drop\",\"%s\"]\x07", f)
+				command := make([]string, 0, 3)
+				if *terminalApiFuncname != "" {
+					command = append(command, "call", *terminalApiFuncname, f)
+				} else {
+					command = append(command, "drop", f)
+				}
+				b, err := json.Marshal(command)
+				if err != nil {
+					fmt.Fprintln(os.Stderr, err)
+					os.Exit(1)
+				}
+				fmt.Printf("\x1b]51;%s\x07", string(b))
 			}
 		} else {
 			if *action != "" {
