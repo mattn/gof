@@ -128,6 +128,8 @@ endif
 
 ![](https://i.imgur.com/jvfuOxh.gif)
 
+* Please try [vargs](https://github.com/tyru/vargs) if you want to communicate easily with Vim terminal API from shell
+
 ## License
 
 MIT
