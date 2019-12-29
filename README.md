@@ -107,7 +107,15 @@ gof() {
 }
 ```
 
-* If you are familiar with Vim script, you may want to send `["call", "[funcname]", "[filename]"]` instead of `["drop", "[filename]"]`. You can use `gof -tf [funcname]` to send `call` command
+* If you are familiar with Vim script, you may want to send `["call", "[funcname]", "[file information]"]` instead of `["drop", "[filename]"]`. You can use `gof -tf [funcname]` to send `call` command
+
+```
+[file information] = {
+  "filename": [relative filename path (string)],
+  "fullpath": [absolute filename path (string)],
+  "root_dir": [root directory (string)]
+}
+```
 
 * You can define utility Vim command `:Gof`. Quickly calls `gof -t` command and
   opens selected files in Vim buffer
@@ -119,6 +127,8 @@ endif
 ```
 
 ![](https://i.imgur.com/jvfuOxh.gif)
+
+* Please try [vargs](https://github.com/tyru/vargs) if you want to communicate easily with Vim terminal API from shell
 
 ## License
 

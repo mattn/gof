@@ -722,10 +722,13 @@ loop:
 	} else {
 		if *terminalApi {
 			for _, f := range selected {
-				command := make([]string, 0, 3)
+				command := make([]interface{}, 0, 3)
 				if *terminalApiFuncname != "" {
-					command = append(command, "call", *terminalApiFuncname, f)
+					command = append(command, "call", *terminalApiFuncname, newVimTapiCall(cwd, f))
 				} else {
+					if !filepath.IsAbs(f) {
+						f = filepath.Join(cwd, f)
+					}
 					command = append(command, "drop", f)
 				}
 				b, err := json.Marshal(command)
@@ -744,4 +747,18 @@ loop:
 			}
 		}
 	}
+}
+
+type vimTapiCall struct {
+	RootDir  string `json:"root_dir"`
+	Filename string `json:"filename"`
+	Fullpath string `json:"fullpath"`
+}
+
+func newVimTapiCall(rootDir, filename string) *vimTapiCall {
+	fullpath := filename
+	if !filepath.IsAbs(filename) {
+		fullpath = filepath.Join(rootDir, filename)
+	}
+	return &vimTapiCall{RootDir: rootDir, Filename: filename, Fullpath: fullpath}
 }
