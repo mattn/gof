@@ -266,9 +266,6 @@ func draw_screen() {
 			}
 			x += w
 		}
-		if runtime.GOOS == "windows" {
-			termbox.Flush()
-		}
 	}
 	if cursor_y >= 0 {
 		print_tb(0, height-4-cursor_y, termbox.ColorRed|termbox.AttrBold, termbox.ColorBlack, "> ")
