@@ -453,6 +453,7 @@ func main() {
 	if files == nil {
 		quit = make(chan bool)
 		go func() {
+			n := 0
 			walker.Walk(cwd, func(path string, info os.FileInfo) error {
 				if terminating {
 					return errors.New("terminate")
@@ -464,14 +465,21 @@ func main() {
 					path = filepath.ToSlash(path)
 					mutex.Lock()
 					files = append(files, path)
-					dirty = true
-					timer.Reset(duration)
+					n++
+					if n%1000 == 0 {
+						dirty = true
+						timer.Reset(duration)
+					}
 					mutex.Unlock()
 				} else if strings.HasPrefix(filepath.Base(path), ".") {
 					return filepath.SkipDir
 				}
 				return nil
 			})
+			mutex.Lock()
+			dirty = true
+			timer.Reset(duration)
+			mutex.Unlock()
 			scanning = -1
 			quit <- true
 		}()
