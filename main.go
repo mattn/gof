@@ -458,22 +458,22 @@ func main() {
 				if terminating {
 					return errors.New("terminate")
 				}
-				if !info.IsDir() {
-					if p, err := filepath.Rel(cwd, path); err == nil {
-						path = p
-					}
-					path = filepath.ToSlash(path)
-					mutex.Lock()
-					files = append(files, path)
-					n++
-					if n%1000 == 0 {
-						dirty = true
-						timer.Reset(duration)
-					}
-					mutex.Unlock()
-				} else if strings.HasPrefix(filepath.Base(path), ".") {
+				path = filepath.Clean(path)
+				if info.IsDir() && filepath.Base(path)[0] == '.' {
 					return filepath.SkipDir
 				}
+				if p, err := filepath.Rel(cwd, path); err == nil {
+					path = p
+				}
+				path = filepath.ToSlash(path)
+				mutex.Lock()
+				files = append(files, path)
+				n++
+				if n%1000 == 0 {
+					dirty = true
+					timer.Reset(duration)
+				}
+				mutex.Unlock()
 				return nil
 			})
 			mutex.Lock()
