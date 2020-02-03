@@ -22,8 +22,8 @@ import (
 
 	enc "github.com/mattn/go-encoding"
 	"github.com/mattn/go-runewidth"
-	"github.com/mattn/gof/fastwalk"
 	"github.com/nsf/termbox-go"
+	"github.com/saracen/walker"
 )
 
 var duration = 20 * time.Millisecond
@@ -453,7 +453,7 @@ func main() {
 	if files == nil {
 		quit = make(chan bool)
 		go func() {
-			fastwalk.FastWalk(cwd, func(path string, info os.FileMode) error {
+			walker.Walk(cwd, func(path string, info os.FileInfo) error {
 				if terminating {
 					return errors.New("terminate")
 				}
