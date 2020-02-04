@@ -569,7 +569,6 @@ loop:
 				rest := input[cursor_x:len(input)]
 				pos := regexp.MustCompile(`\s+`).FindStringIndex(part)
 				if len(pos) > 0 && pos[len(pos)-1] > 0 {
-					println(pos[len(pos)-1])
 					input = []rune(part[0 : pos[len(pos)-1]-1])
 					input = append(input, rest...)
 				} else {
