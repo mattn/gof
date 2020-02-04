@@ -453,17 +453,22 @@ func main() {
 	if files == nil {
 		quit = make(chan bool)
 		go func() {
+			defer close(quit)
+
 			n := 0
 			walker.Walk(cwd, func(path string, info os.FileInfo) error {
 				if terminating {
 					return errors.New("terminate")
 				}
 				path = filepath.Clean(path)
-				if info.IsDir() && filepath.Base(path)[0] == '.' {
-					return filepath.SkipDir
-				}
 				if p, err := filepath.Rel(cwd, path); err == nil {
 					path = p
+				}
+				if path == "." {
+					return nil
+				}
+				if info.IsDir() && filepath.Base(path)[0] == '.' {
+					return filepath.SkipDir
 				}
 				path = filepath.ToSlash(path)
 				mutex.Lock()
