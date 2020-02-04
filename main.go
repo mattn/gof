@@ -603,6 +603,9 @@ loop:
 					input = append(input[0:cursor_x], input[cursor_x+1:len(input)]...)
 					update = true
 				}
+			case termbox.KeyCtrlR:
+				*fuzzy = !*fuzzy
+				update = true
 			default:
 				if ev.Key == termbox.KeySpace {
 					ev.Ch = ' '
