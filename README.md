@@ -67,7 +67,7 @@ $ find /tmp | gof
 |-e            |Edit the selected file           |
 |-r            |Remove the selected file         |
 |-l            |Launcher mode                    |
-|-f            |Launcher mode                    |
+|-f            |Fuzzy match                      |
 |-x            |Exit code for cancel (default: 1)|
 |-d [path]     |Specify root directory           |
 |-a            |Register action keys             |
