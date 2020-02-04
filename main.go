@@ -210,7 +210,7 @@ func draw_screen() {
 	for _, r := range input {
 		pat += regexp.QuoteMeta(string(r)) + ".*?"
 	}
-	for n := 0; n < height-3; n++ {
+	for n := 0; n < height-1; n++ {
 		if n >= len(current) {
 			break
 		}
@@ -249,35 +249,35 @@ func draw_screen() {
 			}
 			if pos1 <= f && f < pos2 {
 				if selected {
-					termbox.SetCell(x, height-4-n, c, termbox.ColorRed|termbox.AttrBold, termbox.ColorDefault)
+					termbox.SetCell(x, height-3-n, c, termbox.ColorRed|termbox.AttrBold, termbox.ColorDefault)
 				} else if cursor_y == n {
-					termbox.SetCell(x, height-4-n, c, termbox.ColorYellow|termbox.AttrBold|termbox.AttrUnderline, termbox.ColorDefault)
+					termbox.SetCell(x, height-3-n, c, termbox.ColorYellow|termbox.AttrBold|termbox.AttrUnderline, termbox.ColorDefault)
 				} else {
-					termbox.SetCell(x, height-4-n, c, termbox.ColorGreen|termbox.AttrBold, termbox.ColorDefault)
+					termbox.SetCell(x, height-3-n, c, termbox.ColorGreen|termbox.AttrBold, termbox.ColorDefault)
 				}
 			} else {
 				if selected {
-					termbox.SetCell(x, height-4-n, c, termbox.ColorRed|termbox.AttrBold, termbox.ColorDefault)
+					termbox.SetCell(x, height-3-n, c, termbox.ColorRed|termbox.AttrBold, termbox.ColorDefault)
 				} else if cursor_y == n {
-					termbox.SetCell(x, height-4-n, c, termbox.ColorYellow|termbox.AttrUnderline, termbox.ColorDefault)
+					termbox.SetCell(x, height-3-n, c, termbox.ColorYellow|termbox.AttrUnderline, termbox.ColorDefault)
 				} else {
-					termbox.SetCell(x, height-4-n, c, termbox.ColorWhite|termbox.AttrBold, termbox.ColorDefault)
+					termbox.SetCell(x, height-3-n, c, termbox.ColorWhite|termbox.AttrBold, termbox.ColorDefault)
 				}
 			}
 			x += w
 		}
 	}
 	if cursor_y >= 0 {
-		print_tb(0, height-4-cursor_y, termbox.ColorRed|termbox.AttrBold, termbox.ColorBlack, "> ")
+		print_tb(0, height-3-cursor_y, termbox.ColorRed|termbox.AttrBold, termbox.ColorBlack, "> ")
 	}
 	if scanning >= 0 {
-		print_tb(0, height-3, termbox.ColorGreen|termbox.AttrBold, termbox.ColorBlack, string([]rune("-\\|/")[scanning%4]))
+		print_tb(0, height-2, termbox.ColorGreen|termbox.AttrBold, termbox.ColorBlack, string([]rune("-\\|/")[scanning%4]))
 		scanning++
 	}
-	printf_tb(2, height-3, termbox.ColorWhite|termbox.AttrBold, termbox.ColorBlack, "%d/%d(%d)", len(current), len(files), len(selected))
-	print_tb(0, height-2, termbox.ColorBlue|termbox.AttrBold, termbox.ColorBlack, "> ")
-	print_tb(2, height-2, termbox.ColorWhite|termbox.AttrBold, termbox.ColorBlack, string(input))
-	termbox.SetCursor(2+runewidth.StringWidth(string(input[0:cursor_x])), height-2)
+	printf_tb(2, height-2, termbox.ColorWhite|termbox.AttrBold, termbox.ColorBlack, "%d/%d(%d)", len(current), len(files), len(selected))
+	print_tb(0, height-1, termbox.ColorBlue|termbox.AttrBold, termbox.ColorBlack, "> ")
+	print_tb(2, height-1, termbox.ColorWhite|termbox.AttrBold, termbox.ColorBlack, string(input))
+	termbox.SetCursor(2+runewidth.StringWidth(string(input[0:cursor_x])), height-1)
 	termbox.Flush()
 }
 
@@ -540,7 +540,7 @@ loop:
 				}
 			case termbox.KeyArrowUp, termbox.KeyCtrlK, termbox.KeyCtrlP:
 				if cursor_y < len(current)-1 {
-					if cursor_y < height-4 {
+					if cursor_y < height-3 {
 						cursor_y++
 					}
 				}
