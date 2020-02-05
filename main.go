@@ -39,7 +39,15 @@ var (
 	action              = flag.String("a", "", "Action keys")
 	terminalApi         = flag.Bool("t", false, "Open via Vim's Terminal API")
 	terminalApiFuncname = flag.String("tf", "", "Terminal API's function name")
+	ignore              = flag.String("i", env(`GOF_IGNORE_PATTERN`, `^(\.git|\.hg|\.svn|_darcs|\.bzr)$`), "Ignore pattern")
 )
+
+func env(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
+}
 
 func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
 	for _, c := range []rune(msg) {
@@ -356,6 +364,15 @@ func main() {
 		}
 	}
 
+	var ignorere *regexp.Regexp
+	if *ignore != "" {
+		ignorere, err = regexp.Compile(*ignore)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+	}
+
 	dirty := false
 	terminating := false
 	var quit chan bool
@@ -380,7 +397,7 @@ func main() {
 
 	if !is_tty {
 		var buf *bufio.Reader
-		if se := os.Getenv("GOFSTDINENC"); se != "" {
+		if se := os.Getenv("GOF_STDIN_ENC"); se != "" {
 			if e := enc.GetEncoding(se); e != nil {
 				buf = bufio.NewReader(transform.NewReader(os.Stdin, e.NewDecoder().Transformer))
 			} else {
@@ -466,8 +483,12 @@ func main() {
 				if path == "." {
 					return nil
 				}
-				if info.IsDir() && filepath.Base(path)[0] == '.' {
-					return filepath.SkipDir
+				base := filepath.Base(path)
+				if ignorere != nil && ignorere.MatchString(base) {
+					if info.IsDir() {
+						return filepath.SkipDir
+					}
+					return nil
 				}
 				path = filepath.ToSlash(path)
 				mutex.Lock()
