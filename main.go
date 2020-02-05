@@ -754,8 +754,15 @@ loop:
 			if *action != "" {
 				fmt.Println(actionKey)
 			}
-			for _, f := range selected {
-				fmt.Println(f)
+			if *root != "" {
+				for _, f := range selected {
+					fmt.Println(filepath.Join(*root, f))
+				}
+			} else {
+				for _, f := range selected {
+					fmt.Println(f)
+				}
+
 			}
 		}
 	}
