@@ -316,10 +316,6 @@ func main() {
 	var err error
 	cwd := ""
 
-	if flag.NArg() == 1 {
-		*root = flag.Arg(0)
-	}
-
 	*terminalApi = *terminalApi || *terminalApiFuncname != ""
 	if *terminalApi {
 		if os.Getenv("VIM_TERMINAL") == "" {
@@ -456,7 +452,10 @@ func main() {
 			defer close(quit)
 
 			n := 0
-			walker.Walk(cwd, func(path string, info os.FileInfo) error {
+			cb := walker.WithErrorCallback(func(pathname string, err error) error {
+				return nil
+			})
+			fn := func(path string, info os.FileInfo) error {
 				if terminating {
 					return errors.New("terminate")
 				}
@@ -480,7 +479,8 @@ func main() {
 				}
 				mutex.Unlock()
 				return nil
-			})
+			}
+			walker.Walk(cwd, fn, cb)
 			mutex.Lock()
 			dirty = true
 			timer.Reset(duration)
