@@ -26,6 +26,12 @@ import (
 	"github.com/saracen/walker"
 )
 
+const name = "gof"
+
+const version = "0.0.4"
+
+var revision = "HEAD"
+
 var duration = 20 * time.Millisecond
 
 var (
@@ -40,6 +46,7 @@ var (
 	terminalApi         = flag.Bool("t", false, "Open via Vim's Terminal API")
 	terminalApiFuncname = flag.String("tf", "", "Terminal API's function name")
 	ignore              = flag.String("i", env(`GOF_IGNORE_PATTERN`, `^(\.git|\.hg|\.svn|_darcs|\.bzr)$`), "Ignore pattern")
+	showVersion         = flag.Bool("v", false, "Print the version")
 )
 
 func env(key, def string) string {
@@ -320,6 +327,11 @@ var actionKeys = []termbox.Key{
 
 func main() {
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Printf("%s %s (rev: %s/%s)\n", name, version, revision, runtime.Version())
+		return
+	}
 
 	var err error
 	cwd := ""
