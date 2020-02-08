@@ -193,12 +193,8 @@ func filter() {
 	}
 	if len(inp) > 0 {
 		sort.Slice(tmp, func(i, j int) bool {
-			if (tmp[i].pos2 - tmp[i].pos1) < (tmp[j].pos2 - tmp[j].pos1) {
-				return true
-			} else if tmp[i].pos1 < tmp[j].pos1 {
-				return true
-			}
-			return false
+			li, lj := tmp[i].pos2-tmp[i].pos1, tmp[j].pos2-tmp[j].pos1
+			return li < lj || li == lj && tmp[i].pos1 < tmp[j].pos1
 		})
 	}
 
