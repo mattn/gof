@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -165,7 +166,12 @@ func filter() {
 		tmp = make([]matched, 0, len(fs))
 		inpl := strings.ToLower(string(inp))
 		for _, f := range fs {
-			pos := strings.Index(strings.ToLower(f), inpl)
+			var pos int
+			if lf := strings.ToLower(f); len(f) == len(lf) {
+				pos = strings.Index(lf, inpl)
+			} else {
+				pos = bytes.Index([]byte(f), []byte(string(inp)))
+			}
 			if pos == -1 {
 				continue
 			}
