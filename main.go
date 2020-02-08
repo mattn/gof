@@ -272,26 +272,26 @@ func draw_screen() {
 				}
 			} else {
 				if selected {
-					termbox.SetCell(x, height-3-n, c, termbox.ColorRed|termbox.AttrBold, termbox.ColorDefault)
+					termbox.SetCell(x, height-3-n, c, termbox.ColorRed, termbox.ColorDefault)
 				} else if cursor_y == n {
 					termbox.SetCell(x, height-3-n, c, termbox.ColorYellow|termbox.AttrUnderline, termbox.ColorDefault)
 				} else {
-					termbox.SetCell(x, height-3-n, c, termbox.ColorWhite|termbox.AttrBold, termbox.ColorDefault)
+					termbox.SetCell(x, height-3-n, c, termbox.ColorDefault, termbox.ColorDefault)
 				}
 			}
 			x += w
 		}
 	}
 	if cursor_y >= 0 {
-		print_tb(0, height-3-cursor_y, termbox.ColorRed|termbox.AttrBold, termbox.ColorBlack, "> ")
+		print_tb(0, height-3-cursor_y, termbox.ColorRed|termbox.AttrBold, termbox.ColorDefault, "> ")
 	}
 	if scanning >= 0 {
-		print_tb(0, height-2, termbox.ColorGreen|termbox.AttrBold, termbox.ColorBlack, string([]rune("-\\|/")[scanning%4]))
+		print_tb(0, height-2, termbox.ColorGreen, termbox.ColorDefault, string([]rune("-\\|/")[scanning%4]))
 		scanning++
 	}
-	printf_tb(2, height-2, termbox.ColorWhite|termbox.AttrBold, termbox.ColorBlack, "%d/%d(%d)", len(current), len(files), len(selected))
-	print_tb(0, height-1, termbox.ColorBlue|termbox.AttrBold, termbox.ColorBlack, "> ")
-	print_tb(2, height-1, termbox.ColorWhite|termbox.AttrBold, termbox.ColorBlack, string(input))
+	printf_tb(2, height-2, termbox.ColorDefault, termbox.ColorDefault, "%d/%d(%d)", len(current), len(files), len(selected))
+	print_tb(0, height-1, termbox.ColorBlue|termbox.AttrBold, termbox.ColorDefault, "> ")
+	print_tb(2, height-1, termbox.ColorDefault|termbox.AttrBold, termbox.ColorDefault, string(input))
 	termbox.SetCursor(2+runewidth.StringWidth(string(input[0:cursor_x])), height-1)
 	termbox.Flush()
 }
