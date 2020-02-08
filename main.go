@@ -775,7 +775,7 @@ loop:
 			for _, f := range selected {
 				command := make([]interface{}, 0, 3)
 				if *terminalApiFuncname != "" {
-					command = append(command, "call", *terminalApiFuncname, newVimTapiCall(cwd, f))
+					command = append(command, "call", *terminalApiFuncname, newVimTapiCall(cwd, f, actionKey))
 				} else {
 					if !filepath.IsAbs(f) {
 						f = filepath.Join(cwd, f)
@@ -808,15 +808,16 @@ loop:
 }
 
 type vimTapiCall struct {
-	RootDir  string `json:"root_dir"`
-	Filename string `json:"filename"`
-	Fullpath string `json:"fullpath"`
+	RootDir   string `json:"root_dir"`
+	Filename  string `json:"filename"`
+	Fullpath  string `json:"fullpath"`
+	ActionKey string `json:"action_key"`
 }
 
-func newVimTapiCall(rootDir, filename string) *vimTapiCall {
+func newVimTapiCall(rootDir, filename, actionKey string) *vimTapiCall {
 	fullpath := filename
 	if !filepath.IsAbs(filename) {
 		fullpath = filepath.Join(rootDir, filename)
 	}
-	return &vimTapiCall{RootDir: rootDir, Filename: filename, Fullpath: fullpath}
+	return &vimTapiCall{RootDir: rootDir, Filename: filename, Fullpath: fullpath, ActionKey: actionKey}
 }
