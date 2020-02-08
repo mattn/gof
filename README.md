@@ -116,7 +116,8 @@ gof() {
 [file information] = {
   "filename": [relative filename path (string)],
   "fullpath": [absolute filename path (string)],
-  "root_dir": [root directory (string)]
+  "root_dir": [root directory (string)],
+  "action_key": [action key of -a (string)]
 }
 ```
 
