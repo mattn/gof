@@ -31,16 +31,7 @@ const version = "0.0.4"
 
 var revision = "HEAD"
 
-var (
-	fuzzy               = flag.Bool("f", false, "Fuzzy match")
-	root                = flag.String("d", "", "Root directory")
-	exit                = flag.Int("x", 1, "Exit code for cancel")
-	action              = flag.String("a", "", "Action keys")
-	terminalApi         = flag.Bool("t", false, "Open via Vim's Terminal API")
-	terminalApiFuncname = flag.String("tf", "", "Terminal API's function name")
-	ignore              = flag.String("i", env(`GOF_IGNORE_PATTERN`, `^(\.git|\.hg|\.svn|_darcs|\.bzr)$`), "Ignore pattern")
-	showVersion         = flag.Bool("v", false, "Print the version")
-)
+var ()
 
 func env(key, def string) string {
 	if v := os.Getenv(key); v != "" {
@@ -84,7 +75,7 @@ var (
 	ignorere           *regexp.Regexp
 )
 
-func filter() {
+func filter(fuzzy bool) {
 	mutex.Lock()
 	fs := files
 	inp := input
@@ -109,7 +100,7 @@ func filter() {
 				selected: prev_selected,
 			}
 		}
-	} else if *fuzzy {
+	} else if fuzzy {
 		pat := "(?i)(?:.*)("
 		for _, r := range []rune(inp) {
 			pat += regexp.QuoteMeta(string(r)) + ".*?"
@@ -377,52 +368,64 @@ func listFiles(wg *sync.WaitGroup, ctx context.Context, cwd string) {
 	mutex.Unlock()
 }
 
-func redrawFunc() {
-	mutex.Lock()
-	d := dirty
-	mutex.Unlock()
-	if d {
-		filter()
-		drawLines()
-		mutex.Lock()
-		dirty = false
-		mutex.Unlock()
-	} else {
-		drawLines()
-	}
-}
-
 func main() {
+	var fuzzy bool
+	var root string
+	var exit int
+	var action string
+	var tapi bool
+	var tapiFunc string
+	var ignore string
+	var showVersion bool
+
+	flag.BoolVar(&fuzzy, "f", false, "Fuzzy match")
+	flag.StringVar(&root, "d", "", "Root directory")
+	flag.IntVar(&exit, "x", 1, "Exit code for cancel")
+	flag.StringVar(&action, "a", "", "Action keys")
+	flag.BoolVar(&tapi, "t", false, "Open via Vim's Terminal API")
+	flag.StringVar(&tapiFunc, "tf", "", "Terminal API's function name")
+	flag.StringVar(&ignore, "i", env(`GOF_IGNORE_PATTERN`, `^(\.git|\.hg|\.svn|_darcs|\.bzr)$`), "Ignore pattern")
+	flag.BoolVar(&showVersion, "v", false, "Print the version")
 	flag.Parse()
 
-	if *showVersion {
+	if showVersion {
 		fmt.Printf("%s %s (rev: %s/%s)\n", name, version, revision, runtime.Version())
 		return
 	}
-
 	var err error
-	cwd := ""
 
-	*terminalApi = *terminalApi || *terminalApiFuncname != ""
-	if *terminalApi {
+	// Make regular expression pattern to ignore files.
+	if ignore != "" {
+		ignorere, err = regexp.Compile(ignore)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+	}
+
+	// Setup terminal API.
+	tapi = tapi || tapiFunc != ""
+	if tapi {
 		if os.Getenv("VIM_TERMINAL") == "" {
 			fmt.Fprintln(os.Stderr, "-t,-tf option is only available inside Vim's terminal window")
 			os.Exit(1)
 		}
 	}
 
-	if *root == "" {
+	// Make sure current directory.
+	cwd := ""
+	if root == "" {
 		cwd, err = os.Getwd()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 	} else {
-		if runtime.GOOS == "windows" && strings.HasPrefix(*root, "/") {
+		if runtime.GOOS == "windows" && strings.HasPrefix(root, "/") {
 			cwd, _ = os.Getwd()
-			cwd = filepath.Join(filepath.VolumeName(cwd), *root)
+			cwd = filepath.Join(filepath.VolumeName(cwd), root)
 		} else {
-			cwd, err = filepath.Abs(*root)
+			cwd, err = filepath.Abs(root)
 		}
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -443,21 +446,25 @@ func main() {
 		}
 	}
 
-	if *ignore != "" {
-		ignorere, err = regexp.Compile(*ignore)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+	redrawFunc := func() {
+		mutex.Lock()
+		d := dirty
+		mutex.Unlock()
+		if d {
+			filter(fuzzy)
+			drawLines()
+			mutex.Lock()
+			dirty = false
+			mutex.Unlock()
+		} else {
+			drawLines()
 		}
 	}
-
 	timer = time.AfterFunc(0, redrawFunc)
 	timer.Stop()
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-
-	ctx, cancel := context.WithCancel(context.Background())
 
 	err = startTerminal()
 	if err != nil {
@@ -471,6 +478,7 @@ func main() {
 	}
 	termbox.SetInputMode(termbox.InputEsc)
 
+	ctx, cancel := context.WithCancel(context.Background())
 	if isTerminal() {
 		// Walk and collect files recursively.
 		go listFiles(&wg, ctx, cwd)
@@ -489,7 +497,7 @@ loop:
 		// Polling key events
 		switch ev := termbox.PollEvent(); ev.Type {
 		case termbox.EventKey:
-			for _, ka := range strings.Split(*action, ",") {
+			for _, ka := range strings.Split(action, ",") {
 				for i, kv := range actionKeys {
 					if ev.Key == kv {
 						ak := fmt.Sprintf("ctrl-%c", 'a'+i)
@@ -508,7 +516,7 @@ loop:
 			switch ev.Key {
 			case termbox.KeyEsc, termbox.KeyCtrlD, termbox.KeyCtrlC:
 				termbox.Close()
-				os.Exit(*exit)
+				os.Exit(exit)
 			case termbox.KeyHome, termbox.KeyCtrlA:
 				cursor_x = 0
 			case termbox.KeyEnd, termbox.KeyCtrlE:
@@ -585,7 +593,7 @@ loop:
 					update = true
 				}
 			case termbox.KeyCtrlR:
-				*fuzzy = !*fuzzy
+				fuzzy = !fuzzy
 				update = true
 			default:
 				if ev.Key == termbox.KeySpace {
@@ -616,7 +624,7 @@ loop:
 			}
 		} else {
 			if update {
-				filter()
+				filter(fuzzy)
 			}
 			drawLines()
 		}
@@ -633,14 +641,14 @@ loop:
 	wg.Wait()
 
 	if len(selected) == 0 {
-		os.Exit(*exit)
+		os.Exit(exit)
 	}
 
-	if *terminalApi {
+	if tapi {
 		for _, f := range selected {
 			command := make([]interface{}, 0, 3)
-			if *terminalApiFuncname != "" {
-				command = append(command, "call", *terminalApiFuncname, newVimTapiCall(cwd, f, actionKey))
+			if tapiFunc != "" {
+				command = append(command, "call", tapiFunc, newVimTapiCall(cwd, f, actionKey))
 			} else {
 				if !filepath.IsAbs(f) {
 					f = filepath.Join(cwd, f)
@@ -655,12 +663,12 @@ loop:
 			fmt.Printf("\x1b]51;%s\x07", string(b))
 		}
 	} else {
-		if *action != "" {
+		if action != "" {
 			fmt.Println(actionKey)
 		}
-		if *root != "" {
+		if root != "" {
 			for _, f := range selected {
-				fmt.Println(filepath.Join(*root, f))
+				fmt.Println(filepath.Join(root, f))
 			}
 		} else {
 			for _, f := range selected {
