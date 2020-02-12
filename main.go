@@ -7,8 +7,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -35,9 +33,6 @@ var revision = "HEAD"
 
 var (
 	edit                = flag.Bool("e", false, "Edit selected file")
-	cat                 = flag.Bool("c", false, "Cat the file")
-	remove              = flag.Bool("r", false, "Remove the file")
-	launcher            = flag.Bool("l", false, "Launcher mode")
 	fuzzy               = flag.Bool("f", false, "Fuzzy match")
 	root                = flag.String("d", "", "Root directory")
 	exit                = flag.Int("x", 1, "Exit code for cancel")
@@ -501,28 +496,6 @@ func main() {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
-	} else if *launcher {
-		home := os.Getenv("HOME")
-		if home == "" && runtime.GOOS == "windows" {
-			home = os.Getenv("USERPROFILE")
-		}
-		b, err := ioutil.ReadFile(filepath.Join(home, ".gof-launcher"))
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-		launcherFiles = strings.Split(string(b), "\n")
-		for _, line := range launcherFiles {
-			cols := strings.SplitN(line, "\t", 2)
-			if len(cols) == 2 {
-				files = append(files, cols[0])
-			}
-		}
-		err = tty_ready()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
 	}
 
 	err = termbox.Init()
@@ -711,67 +684,17 @@ loop:
 		os.Exit(*exit)
 	}
 
-	if *edit || *cat || *remove {
+	if *edit {
 		for i, f := range selected {
 			selected[i] = filepath.Join(cwd, f)
 		}
 	}
 
-	if *launcher {
-		for _, f := range selected {
-			for _, line := range launcherFiles {
-				cols := strings.SplitN(line, "\t", 2)
-				if len(cols) == 2 && cols[0] == f {
-					stdin := os.Stdin
-					stdout := os.Stdout
-					var shell, shellcflag string
-					if runtime.GOOS == "windows" {
-						stdin, _ = os.Open("CONIN$")
-						stdout, _ = os.Open("CONOUT$")
-						shell = os.Getenv("COMSPEC")
-						if shell == "" {
-							shell = "cmd"
-						}
-						shellcflag = "/c"
-					} else {
-						stdin = os.Stdin
-						shell = os.Getenv("SHELL")
-						if shell == "" {
-							shell = "sh"
-						}
-						shellcflag = "-c"
-					}
-					cmd := exec.Command(shell, shellcflag, strings.TrimSpace(cols[1]))
-					cmd.Stdin = stdin
-					cmd.Stdout = stdout
-					cmd.Stderr = os.Stderr
-					err = cmd.Start()
-					if err != nil {
-						fmt.Fprintln(os.Stderr, err)
-					}
-					return
-				}
-			}
-		}
-	} else if *edit {
+	if *edit {
 		err = edit_file(selected)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
-		}
-	} else if *cat {
-		for _, f := range selected {
-			f, err := os.Open(f)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				continue
-			}
-			io.Copy(os.Stdout, f)
-			f.Close()
-		}
-	} else if *remove {
-		for _, f := range selected {
-			os.Remove(f)
 		}
 	} else if flag.NArg() > 0 {
 		args := flag.Args()
