@@ -453,6 +453,7 @@ func main() {
 		if d {
 			filter(fuzzy)
 			drawLines()
+
 			mutex.Lock()
 			dirty = false
 			mutex.Unlock()
@@ -499,17 +500,19 @@ loop:
 		case termbox.EventKey:
 			for _, ka := range strings.Split(action, ",") {
 				for i, kv := range actionKeys {
-					if ev.Key == kv {
-						ak := fmt.Sprintf("ctrl-%c", 'a'+i)
-						if ka == ak {
-							if cursor_y >= 0 && cursor_y < len(current) {
-								if len(selected) == 0 {
-									selected = append(selected, current[cursor_y].name)
-								}
-								actionKey = ak
-								break loop
-							}
+					if ev.Key != kv {
+						continue
+					}
+					ak := fmt.Sprintf("ctrl-%c", 'a'+i)
+					if ka != ak {
+						continue
+					}
+					if cursor_y >= 0 && cursor_y < len(current) {
+						if len(selected) == 0 {
+							selected = append(selected, current[cursor_y].name)
 						}
+						actionKey = ak
+						break loop
 					}
 				}
 			}
