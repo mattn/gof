@@ -48,16 +48,16 @@ func env(key, def string) string {
 	return def
 }
 
-func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
+func tprint(x, y int, fg, bg termbox.Attribute, msg string) {
 	for _, c := range []rune(msg) {
 		termbox.SetCell(x, y, c, fg, bg)
 		x += runewidth.RuneWidth(c)
 	}
 }
 
-func printf_tb(x, y int, fg, bg termbox.Attribute, format string, args ...interface{}) {
+func tprintf(x, y int, fg, bg termbox.Attribute, format string, args ...interface{}) {
 	s := fmt.Sprintf(format, args...)
-	print_tb(x, y, fg, bg, s)
+	tprint(x, y, fg, bg, s)
 }
 
 type matched struct {
@@ -259,15 +259,15 @@ func drawLines() {
 		}
 	}
 	if cursor_y >= 0 {
-		print_tb(0, height-3-cursor_y, termbox.ColorRed|termbox.AttrBold, termbox.ColorDefault, "> ")
+		tprint(0, height-3-cursor_y, termbox.ColorRed|termbox.AttrBold, termbox.ColorDefault, "> ")
 	}
 	if scanning >= 0 {
-		print_tb(0, height-2, termbox.ColorGreen, termbox.ColorDefault, string([]rune("-\\|/")[scanning%4]))
+		tprint(0, height-2, termbox.ColorGreen, termbox.ColorDefault, string([]rune("-\\|/")[scanning%4]))
 		scanning++
 	}
-	printf_tb(2, height-2, termbox.ColorDefault, termbox.ColorDefault, "%d/%d(%d)", len(current), len(files), len(selected))
-	print_tb(0, height-1, termbox.ColorBlue|termbox.AttrBold, termbox.ColorDefault, "> ")
-	print_tb(2, height-1, termbox.ColorDefault|termbox.AttrBold, termbox.ColorDefault, string(input))
+	tprintf(2, height-2, termbox.ColorDefault, termbox.ColorDefault, "%d/%d(%d)", len(current), len(files), len(selected))
+	tprint(0, height-1, termbox.ColorBlue|termbox.AttrBold, termbox.ColorDefault, "> ")
+	tprint(2, height-1, termbox.ColorDefault|termbox.AttrBold, termbox.ColorDefault, string(input))
 	termbox.SetCursor(2+runewidth.StringWidth(string(input[0:cursor_x])), height-1)
 	termbox.Flush()
 }
@@ -334,8 +334,8 @@ func readLines(quit chan bool) {
 	mutex.Lock()
 	dirty = true
 	timer.Reset(duration)
-	mutex.Unlock()
 	scanning = -1
+	mutex.Unlock()
 	quit <- true
 }
 
@@ -379,8 +379,8 @@ func listFiles(cwd string, quit chan bool) {
 	mutex.Lock()
 	dirty = true
 	timer.Reset(duration)
-	mutex.Unlock()
 	scanning = -1
+	mutex.Unlock()
 	quit <- true
 }
 
