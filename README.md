@@ -63,10 +63,6 @@ $ find /tmp | gof
 
 |Option        |Description                      |
 |--------------|---------------------------------|
-|-c            |Cat the selected file            |
-|-e            |Edit the selected file           |
-|-r            |Remove the selected file         |
-|-l            |Launcher mode                    |
 |-f            |Fuzzy match                      |
 |-x            |Exit code for cancel (default: 1)|
 |-d [path]     |Specify root directory           |
@@ -74,28 +70,9 @@ $ find /tmp | gof
 |-t            |Open via Vim's Terminal API      |
 |-tf [funcname]|Terminal API's function name     |
 
-## Launcher Mode
-
-Put `~/.gof-launcher`
-
-```
-[name]	[command]
-```
-
-`name` and `command` should be separated by TAB. `gof -l` launch `command`s for selected `name`. Below is a my `.gof-launcher` file.
-
-```
-Vim	gvim
-Emacs	emacs
-GIMP	gimp
-```
-
 ## Vim Terminal API
 
-* `gof -t` or `gof -tf [prefix]` opens selected files in Vim using [Terminal
-  API](https://vim-jp.org/vimdoc-en/terminal.html#terminal-api).  This option is
-  ignored when `-l`, `-e`, `-c`, `-r`, or 1 or more non-option argument were
-  supplied
+* `gof -t` or `gof -tf [prefix]` opens selected files in Vim using [Terminal API](https://vim-jp.org/vimdoc-en/terminal.html#terminal-api). 
 
 * If you want to add `-t` option automatically whether you are inside Vim
   terminal or not, you can define alias like this
