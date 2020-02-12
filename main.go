@@ -465,10 +465,22 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	err = startTerminal()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+	isTty := isTerminal()
+	ctx, cancel := context.WithCancel(context.Background())
+	if isTty {
+		// Walk and collect files recursively.
+		go listFiles(ctx, &wg, cwd)
+	} else {
+		// Read lines from stdin.
+		go readLines(ctx, &wg, os.Stdin)
+	}
+
+	if !isTty {
+		err = startTerminal()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	}
 	err = termbox.Init()
 	if err != nil {
@@ -476,15 +488,6 @@ func main() {
 		os.Exit(1)
 	}
 	termbox.SetInputMode(termbox.InputEsc)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	if isTerminal() {
-		// Walk and collect files recursively.
-		go listFiles(ctx, &wg, cwd)
-	} else {
-		// Read lines from stdin.
-		go readLines(ctx, &wg, os.Stdin)
-	}
 
 	redrawFunc()
 	actionKey := ""
