@@ -28,7 +28,7 @@ func setStdHandle(stdhandle int32, handle syscall.Handle) error {
 	return nil
 }
 
-func isatty() bool {
+func isTerminal() bool {
 	f := syscall.MustLoadDLL("kernel32.dll").MustFindProc("GetConsoleMode")
 	var st uint32
 	r1, _, err := f.Call(uintptr(os.Stdin.Fd()), uintptr(unsafe.Pointer(&st)))
@@ -38,7 +38,7 @@ func isatty() bool {
 var stdout = os.Stdout
 var stdin = os.Stdin
 
-func tty_ready() error {
+func startTerminal() error {
 	var err error
 	_stdin, err := os.Open("CONIN$")
 	if err != nil {
@@ -69,7 +69,7 @@ func tty_ready() error {
 	return nil
 }
 
-func tty_term() {
+func stopTerminal() {
 	os.Stdin = stdin
 	syscall.Stdin = syscall.Handle(os.Stdin.Fd())
 	setStdHandle(syscall.STD_INPUT_HANDLE, syscall.Stdin)

@@ -8,7 +8,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -464,16 +463,20 @@ func main() {
 	timer = time.AfterFunc(0, redrawFunc)
 	timer.Stop()
 
-	is_tty := isatty()
-
-	if !is_tty {
-		quit = make(chan bool)
+	quit = make(chan bool)
+	isTty := isTerminal()
+	if !isTty {
+		// Read lines from stdin.
 		go readLines(quit)
-		err = tty_ready()
+
+		err = startTerminal()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
+	} else {
+		// Walk and collect files recursively.
+		go listFiles(cwd, quit)
 	}
 
 	err = termbox.Init()
@@ -482,20 +485,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	if is_tty {
+	if isTty {
 		termbox.SetInputMode(termbox.InputEsc)
 	}
 
-	filter()
-	drawLines()
-
-	// Walk and collect files recursively.
-	if files == nil {
-		files = []string{}
-		quit = make(chan bool)
-		go listFiles(cwd, quit)
-	}
-
+	redrawFunc()
 	actionKey := ""
 
 loop:
@@ -647,59 +641,43 @@ loop:
 
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 	termbox.Close()
-
-	tty_term()
+	stopTerminal()
 
 	if len(selected) == 0 {
 		os.Exit(*exit)
 	}
 
-	if flag.NArg() > 0 {
-		args := flag.Args()
-		args = append(args, selected...)
-		cmd := exec.Command(args[0], args[1:]...)
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		err = cmd.Start()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+	if *terminalApi {
+		for _, f := range selected {
+			command := make([]interface{}, 0, 3)
+			if *terminalApiFuncname != "" {
+				command = append(command, "call", *terminalApiFuncname, newVimTapiCall(cwd, f, actionKey))
+			} else {
+				if !filepath.IsAbs(f) {
+					f = filepath.Join(cwd, f)
+				}
+				command = append(command, "drop", f)
+			}
+			b, err := json.Marshal(command)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+			fmt.Printf("\x1b]51;%s\x07", string(b))
 		}
-		cmd.Wait()
 	} else {
-		if *terminalApi {
+		if *action != "" {
+			fmt.Println(actionKey)
+		}
+		if *root != "" {
 			for _, f := range selected {
-				command := make([]interface{}, 0, 3)
-				if *terminalApiFuncname != "" {
-					command = append(command, "call", *terminalApiFuncname, newVimTapiCall(cwd, f, actionKey))
-				} else {
-					if !filepath.IsAbs(f) {
-						f = filepath.Join(cwd, f)
-					}
-					command = append(command, "drop", f)
-				}
-				b, err := json.Marshal(command)
-				if err != nil {
-					fmt.Fprintln(os.Stderr, err)
-					os.Exit(1)
-				}
-				fmt.Printf("\x1b]51;%s\x07", string(b))
+				fmt.Println(filepath.Join(*root, f))
 			}
 		} else {
-			if *action != "" {
-				fmt.Println(actionKey)
+			for _, f := range selected {
+				fmt.Println(f)
 			}
-			if *root != "" {
-				for _, f := range selected {
-					fmt.Println(filepath.Join(*root, f))
-				}
-			} else {
-				for _, f := range selected {
-					fmt.Println(f)
-				}
 
-			}
 		}
 	}
 }
