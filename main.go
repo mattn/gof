@@ -77,12 +77,10 @@ var (
 	cursor_x, cursor_y int
 	width, height      int
 	mutex              sync.Mutex
-	launcherFiles      = []string{}
 	dirty              = false
 	duration           = 20 * time.Millisecond
 	timer              *time.Timer
 	scanning           = 0
-	drawing            = false
 	ignorere           *regexp.Regexp
 )
 
