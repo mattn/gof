@@ -3,10 +3,11 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -82,7 +83,6 @@ var (
 	timer              *time.Timer
 	scanning           = 0
 	drawing            = false
-	terminating        = false
 	ignorere           *regexp.Regexp
 )
 
@@ -301,8 +301,8 @@ var actionKeys = []termbox.Key{
 	termbox.KeyCtrlZ,
 }
 
-func readLines(quit chan bool) {
-	defer close(quit)
+func readLines(wg *sync.WaitGroup, ctx context.Context, r io.Reader) {
+	defer wg.Done()
 
 	var buf *bufio.Reader
 	if se := os.Getenv("GOF_STDIN_ENC"); se != "" {
@@ -336,20 +336,16 @@ func readLines(quit chan bool) {
 	timer.Reset(duration)
 	scanning = -1
 	mutex.Unlock()
-	quit <- true
 }
 
-func listFiles(cwd string, quit chan bool) {
-	defer close(quit)
+func listFiles(wg *sync.WaitGroup, ctx context.Context, cwd string) {
+	defer wg.Done()
 
 	n := 0
 	cb := walker.WithErrorCallback(func(pathname string, err error) error {
 		return nil
 	})
 	fn := func(path string, info os.FileInfo) error {
-		if terminating {
-			return errors.New("terminate")
-		}
 		path = filepath.Clean(path)
 		if p, err := filepath.Rel(cwd, path); err == nil {
 			path = p
@@ -375,13 +371,12 @@ func listFiles(cwd string, quit chan bool) {
 		mutex.Unlock()
 		return nil
 	}
-	walker.Walk(cwd, fn, cb)
+	walker.WalkWithContext(ctx, cwd, fn, cb)
 	mutex.Lock()
 	dirty = true
 	timer.Reset(duration)
 	scanning = -1
 	mutex.Unlock()
-	quit <- true
 }
 
 func redrawFunc() {
@@ -458,35 +453,32 @@ func main() {
 		}
 	}
 
-	var quit chan bool
-
 	timer = time.AfterFunc(0, redrawFunc)
 	timer.Stop()
 
-	quit = make(chan bool)
-	isTty := isTerminal()
-	if !isTty {
-		// Read lines from stdin.
-		go readLines(quit)
+	var wg sync.WaitGroup
+	wg.Add(1)
 
-		err = startTerminal()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-	} else {
-		// Walk and collect files recursively.
-		go listFiles(cwd, quit)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	err = startTerminal()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
-
 	err = termbox.Init()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+	termbox.SetInputMode(termbox.InputEsc)
 
-	if isTty {
-		termbox.SetInputMode(termbox.InputEsc)
+	if isTerminal() {
+		// Walk and collect files recursively.
+		go listFiles(&wg, ctx, cwd)
+	} else {
+		// Read lines from stdin.
+		go readLines(&wg, ctx, os.Stdin)
 	}
 
 	redrawFunc()
@@ -634,14 +626,13 @@ loop:
 	timer.Stop()
 
 	// Request terminating
-	terminating = true
-	if quit != nil {
-		<-quit
-	}
+	cancel()
 
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 	termbox.Close()
 	stopTerminal()
+
+	wg.Wait()
 
 	if len(selected) == 0 {
 		os.Exit(*exit)
