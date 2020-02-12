@@ -33,8 +33,6 @@ const version = "0.0.4"
 
 var revision = "HEAD"
 
-var duration = 20 * time.Millisecond
-
 var (
 	edit                = flag.Bool("e", false, "Edit selected file")
 	cat                 = flag.Bool("c", false, "Cat the file")
@@ -107,6 +105,13 @@ var (
 	width, height      int
 	mutex              sync.Mutex
 	launcherFiles      = []string{}
+	dirty              = false
+	duration           = 20 * time.Millisecond
+	timer              *time.Timer
+	scanning           = 0
+	drawing            = false
+	terminating        = false
+	ignorere           *regexp.Regexp
 )
 
 func filter() {
@@ -210,10 +215,7 @@ func filter() {
 	}
 }
 
-var scanning = 0
-var drawing = false
-
-func draw_screen() {
+func drawLines() {
 	defer func() {
 		recover()
 	}()
@@ -327,6 +329,104 @@ var actionKeys = []termbox.Key{
 	termbox.KeyCtrlZ,
 }
 
+func readLines(quit chan bool) {
+	defer close(quit)
+
+	var buf *bufio.Reader
+	if se := os.Getenv("GOF_STDIN_ENC"); se != "" {
+		if e := enc.GetEncoding(se); e != nil {
+			buf = bufio.NewReader(transform.NewReader(os.Stdin, e.NewDecoder().Transformer))
+		} else {
+			buf = bufio.NewReader(os.Stdin)
+		}
+	} else {
+		buf = bufio.NewReader(os.Stdin)
+	}
+	files = []string{}
+
+	n := 0
+	for {
+		b, _, err := buf.ReadLine()
+		if err != nil {
+			break
+		}
+		mutex.Lock()
+		files = append(files, string(b))
+		n++
+		if n%1000 == 0 {
+			dirty = true
+			timer.Reset(duration)
+		}
+		mutex.Unlock()
+	}
+	mutex.Lock()
+	dirty = true
+	timer.Reset(duration)
+	mutex.Unlock()
+	scanning = -1
+	quit <- true
+}
+
+func listFiles(cwd string, quit chan bool) {
+	defer close(quit)
+
+	n := 0
+	cb := walker.WithErrorCallback(func(pathname string, err error) error {
+		return nil
+	})
+	fn := func(path string, info os.FileInfo) error {
+		if terminating {
+			return errors.New("terminate")
+		}
+		path = filepath.Clean(path)
+		if p, err := filepath.Rel(cwd, path); err == nil {
+			path = p
+		}
+		if path == "." {
+			return nil
+		}
+		base := filepath.Base(path)
+		if ignorere != nil && ignorere.MatchString(base) {
+			if info.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		path = filepath.ToSlash(path)
+		mutex.Lock()
+		files = append(files, path)
+		n++
+		if n%1000 == 0 {
+			dirty = true
+			timer.Reset(duration)
+		}
+		mutex.Unlock()
+		return nil
+	}
+	walker.Walk(cwd, fn, cb)
+	mutex.Lock()
+	dirty = true
+	timer.Reset(duration)
+	mutex.Unlock()
+	scanning = -1
+	quit <- true
+}
+
+func redrawFunc() {
+	mutex.Lock()
+	d := dirty
+	mutex.Unlock()
+	if d {
+		filter()
+		drawLines()
+		mutex.Lock()
+		dirty = false
+		mutex.Unlock()
+	} else {
+		drawLines()
+	}
+}
+
 func main() {
 	flag.Parse()
 
@@ -378,7 +478,6 @@ func main() {
 		}
 	}
 
-	var ignorere *regexp.Regexp
 	if *ignore != "" {
 		ignorere, err = regexp.Compile(*ignore)
 		if err != nil {
@@ -387,53 +486,16 @@ func main() {
 		}
 	}
 
-	dirty := false
-	terminating := false
 	var quit chan bool
 
-	timer := time.AfterFunc(0, func() {
-		mutex.Lock()
-		d := dirty
-		mutex.Unlock()
-		if d {
-			filter()
-			draw_screen()
-			mutex.Lock()
-			dirty = false
-			mutex.Unlock()
-		} else {
-			draw_screen()
-		}
-	})
+	timer = time.AfterFunc(0, redrawFunc)
 	timer.Stop()
 
 	is_tty := isatty()
 
 	if !is_tty {
-		var buf *bufio.Reader
-		if se := os.Getenv("GOF_STDIN_ENC"); se != "" {
-			if e := enc.GetEncoding(se); e != nil {
-				buf = bufio.NewReader(transform.NewReader(os.Stdin, e.NewDecoder().Transformer))
-			} else {
-				buf = bufio.NewReader(os.Stdin)
-			}
-		} else {
-			buf = bufio.NewReader(os.Stdin)
-		}
-		files = []string{}
-		go func() {
-			for {
-				b, _, err := buf.ReadLine()
-				if err != nil {
-					break
-				}
-				mutex.Lock()
-				files = append(files, string(b))
-				mutex.Unlock()
-				dirty = true
-				timer.Reset(duration)
-			}
-		}()
+		quit = make(chan bool)
+		go readLines(quit)
 		err = tty_ready()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -474,55 +536,13 @@ func main() {
 	}
 
 	filter()
-	draw_screen()
+	drawLines()
 
 	// Walk and collect files recursively.
 	if files == nil {
+		files = []string{}
 		quit = make(chan bool)
-		go func() {
-			defer close(quit)
-
-			n := 0
-			cb := walker.WithErrorCallback(func(pathname string, err error) error {
-				return nil
-			})
-			fn := func(path string, info os.FileInfo) error {
-				if terminating {
-					return errors.New("terminate")
-				}
-				path = filepath.Clean(path)
-				if p, err := filepath.Rel(cwd, path); err == nil {
-					path = p
-				}
-				if path == "." {
-					return nil
-				}
-				base := filepath.Base(path)
-				if ignorere != nil && ignorere.MatchString(base) {
-					if info.IsDir() {
-						return filepath.SkipDir
-					}
-					return nil
-				}
-				path = filepath.ToSlash(path)
-				mutex.Lock()
-				files = append(files, path)
-				n++
-				if n%1000 == 0 {
-					dirty = true
-					timer.Reset(duration)
-				}
-				mutex.Unlock()
-				return nil
-			}
-			walker.Walk(cwd, fn, cb)
-			mutex.Lock()
-			dirty = true
-			timer.Reset(duration)
-			mutex.Unlock()
-			scanning = -1
-			quit <- true
-		}()
+		go listFiles(cwd, quit)
 	}
 
 	actionKey := ""
@@ -671,7 +691,7 @@ loop:
 			if update {
 				filter()
 			}
-			draw_screen()
+			drawLines()
 		}
 	}
 	timer.Stop()
