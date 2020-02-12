@@ -31,7 +31,28 @@ const version = "0.0.4"
 
 var revision = "HEAD"
 
-var ()
+type matched struct {
+	name     string
+	pos1     int
+	pos2     int
+	selected bool
+}
+
+var (
+	input            = []rune{}
+	files            []string
+	selected         = []string{}
+	heading          = false
+	current          []matched
+	cursorX, cursorY int
+	width, height    int
+	mutex            sync.Mutex
+	dirty            = false
+	duration         = 20 * time.Millisecond
+	timer            *time.Timer
+	scanning         = 0
+	ignorere         *regexp.Regexp
+)
 
 func env(key, def string) string {
 	if v := os.Getenv(key); v != "" {
@@ -52,29 +73,6 @@ func tprintf(x, y int, fg, bg termbox.Attribute, format string, args ...interfac
 	tprint(x, y, fg, bg, s)
 }
 
-type matched struct {
-	name     string
-	pos1     int
-	pos2     int
-	selected bool
-}
-
-var (
-	input              = []rune{}
-	files              []string
-	selected           = []string{}
-	heading            = false
-	current            []matched
-	cursor_x, cursor_y int
-	width, height      int
-	mutex              sync.Mutex
-	dirty              = false
-	duration           = 20 * time.Millisecond
-	timer              *time.Timer
-	scanning           = 0
-	ignorere           *regexp.Regexp
-)
-
 func filter(fuzzy bool) {
 	mutex.Lock()
 	fs := files
@@ -86,10 +84,10 @@ func filter(fuzzy bool) {
 	if len(inp) == 0 {
 		tmp = make([]matched, len(fs))
 		for n, f := range fs {
-			prev_selected := false
+			prevSelected := false
 			for _, s := range sel {
 				if f == s {
-					prev_selected = true
+					prevSelected = true
 					break
 				}
 			}
@@ -97,7 +95,7 @@ func filter(fuzzy bool) {
 				name:     f,
 				pos1:     -1,
 				pos2:     -1,
-				selected: prev_selected,
+				selected: prevSelected,
 			}
 		}
 	} else if fuzzy {
@@ -114,10 +112,10 @@ func filter(fuzzy bool) {
 			if len(ms) != 1 || len(ms[0]) != 4 {
 				continue
 			}
-			prev_selected := false
+			prevSelected := false
 			for _, s := range sel {
 				if f == s {
-					prev_selected = true
+					prevSelected = true
 					break
 				}
 			}
@@ -125,7 +123,7 @@ func filter(fuzzy bool) {
 				name:     f,
 				pos1:     len([]rune(f[0:ms[0][2]])),
 				pos2:     len([]rune(f[0:ms[0][3]])),
-				selected: prev_selected,
+				selected: prevSelected,
 			})
 		}
 	} else {
@@ -141,10 +139,10 @@ func filter(fuzzy bool) {
 			if pos == -1 {
 				continue
 			}
-			prev_selected := false
+			prevSelected := false
 			for _, s := range sel {
 				if f == s {
-					prev_selected = true
+					prevSelected = true
 					break
 				}
 			}
@@ -153,7 +151,7 @@ func filter(fuzzy bool) {
 				name:     f,
 				pos1:     pos1,
 				pos2:     pos1 + len(inp),
-				selected: prev_selected,
+				selected: prevSelected,
 			})
 		}
 	}
@@ -168,11 +166,11 @@ func filter(fuzzy bool) {
 	defer mutex.Unlock()
 	current = tmp
 	selected = sel
-	if cursor_y < 0 {
-		cursor_y = 0
+	if cursorY < 0 {
+		cursorY = 0
 	}
-	if cursor_y >= len(current) {
-		cursor_y = len(current) - 1
+	if cursorY >= len(current) {
+		cursorY = len(current) - 1
 	}
 }
 
@@ -230,7 +228,7 @@ func drawLines() {
 			if pos1 <= f && f < pos2 {
 				if selected {
 					termbox.SetCell(x, height-3-n, c, termbox.ColorRed|termbox.AttrBold, termbox.ColorDefault)
-				} else if cursor_y == n {
+				} else if cursorY == n {
 					termbox.SetCell(x, height-3-n, c, termbox.ColorYellow|termbox.AttrBold|termbox.AttrUnderline, termbox.ColorDefault)
 				} else {
 					termbox.SetCell(x, height-3-n, c, termbox.ColorGreen|termbox.AttrBold, termbox.ColorDefault)
@@ -238,7 +236,7 @@ func drawLines() {
 			} else {
 				if selected {
 					termbox.SetCell(x, height-3-n, c, termbox.ColorRed, termbox.ColorDefault)
-				} else if cursor_y == n {
+				} else if cursorY == n {
 					termbox.SetCell(x, height-3-n, c, termbox.ColorYellow|termbox.AttrUnderline, termbox.ColorDefault)
 				} else {
 					termbox.SetCell(x, height-3-n, c, termbox.ColorDefault, termbox.ColorDefault)
@@ -247,8 +245,8 @@ func drawLines() {
 			x += w
 		}
 	}
-	if cursor_y >= 0 {
-		tprint(0, height-3-cursor_y, termbox.ColorRed|termbox.AttrBold, termbox.ColorDefault, "> ")
+	if cursorY >= 0 {
+		tprint(0, height-3-cursorY, termbox.ColorRed|termbox.AttrBold, termbox.ColorDefault, "> ")
 	}
 	if scanning >= 0 {
 		tprint(0, height-2, termbox.ColorGreen, termbox.ColorDefault, string([]rune("-\\|/")[scanning%4]))
@@ -257,7 +255,7 @@ func drawLines() {
 	tprintf(2, height-2, termbox.ColorDefault, termbox.ColorDefault, "%d/%d(%d)", len(current), len(files), len(selected))
 	tprint(0, height-1, termbox.ColorBlue|termbox.AttrBold, termbox.ColorDefault, "> ")
 	tprint(2, height-1, termbox.ColorDefault|termbox.AttrBold, termbox.ColorDefault, string(input))
-	termbox.SetCursor(2+runewidth.StringWidth(string(input[0:cursor_x])), height-1)
+	termbox.SetCursor(2+runewidth.StringWidth(string(input[0:cursorX])), height-1)
 	termbox.Flush()
 }
 
@@ -290,7 +288,7 @@ var actionKeys = []termbox.Key{
 	termbox.KeyCtrlZ,
 }
 
-func readLines(wg *sync.WaitGroup, ctx context.Context, r io.Reader) {
+func readLines(ctx context.Context, wg *sync.WaitGroup, r io.Reader) {
 	defer wg.Done()
 
 	var buf *bufio.Reader
@@ -327,7 +325,7 @@ func readLines(wg *sync.WaitGroup, ctx context.Context, r io.Reader) {
 	mutex.Unlock()
 }
 
-func listFiles(wg *sync.WaitGroup, ctx context.Context, cwd string) {
+func listFiles(ctx context.Context, wg *sync.WaitGroup, cwd string) {
 	defer wg.Done()
 
 	n := 0
@@ -482,10 +480,10 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	if isTerminal() {
 		// Walk and collect files recursively.
-		go listFiles(&wg, ctx, cwd)
+		go listFiles(ctx, &wg, cwd)
 	} else {
 		// Read lines from stdin.
-		go readLines(&wg, ctx, os.Stdin)
+		go readLines(ctx, &wg, os.Stdin)
 	}
 
 	redrawFunc()
@@ -507,9 +505,9 @@ loop:
 					if ka != ak {
 						continue
 					}
-					if cursor_y >= 0 && cursor_y < len(current) {
+					if cursorY >= 0 && cursorY < len(current) {
 						if len(selected) == 0 {
-							selected = append(selected, current[cursor_y].name)
+							selected = append(selected, current[cursorY].name)
 						}
 						actionKey = ak
 						break loop
@@ -521,45 +519,45 @@ loop:
 				termbox.Close()
 				os.Exit(exit)
 			case termbox.KeyHome, termbox.KeyCtrlA:
-				cursor_x = 0
+				cursorX = 0
 			case termbox.KeyEnd, termbox.KeyCtrlE:
-				cursor_x = len(input)
+				cursorX = len(input)
 			case termbox.KeyEnter:
-				if cursor_y >= 0 && cursor_y < len(current) {
+				if cursorY >= 0 && cursorY < len(current) {
 					if len(selected) == 0 {
-						selected = append(selected, current[cursor_y].name)
+						selected = append(selected, current[cursorY].name)
 					}
 					break loop
 				}
 			case termbox.KeyArrowLeft:
-				if cursor_x > 0 {
-					cursor_x--
+				if cursorX > 0 {
+					cursorX--
 				}
 			case termbox.KeyArrowRight:
-				if cursor_x < len([]rune(input)) {
-					cursor_x++
+				if cursorX < len([]rune(input)) {
+					cursorX++
 				}
 			case termbox.KeyArrowUp, termbox.KeyCtrlK, termbox.KeyCtrlP:
-				if cursor_y < len(current)-1 {
-					if cursor_y < height-3 {
-						cursor_y++
+				if cursorY < len(current)-1 {
+					if cursorY < height-3 {
+						cursorY++
 					}
 				}
 			case termbox.KeyArrowDown, termbox.KeyCtrlJ, termbox.KeyCtrlN:
-				if cursor_y > 0 {
-					cursor_y--
+				if cursorY > 0 {
+					cursorY--
 				}
 			case termbox.KeyCtrlI:
 				heading = !heading
 			case termbox.KeyCtrlL:
 				update = true
 			case termbox.KeyCtrlU:
-				cursor_x = 0
+				cursorX = 0
 				input = []rune{}
 				update = true
 			case termbox.KeyCtrlW:
-				part := string(input[0:cursor_x])
-				rest := input[cursor_x:len(input)]
+				part := string(input[0:cursorX])
+				rest := input[cursorX:len(input)]
 				pos := regexp.MustCompile(`\s+`).FindStringIndex(part)
 				if len(pos) > 0 && pos[len(pos)-1] > 0 {
 					input = []rune(part[0 : pos[len(pos)-1]-1])
@@ -567,11 +565,11 @@ loop:
 				} else {
 					input = []rune{}
 				}
-				cursor_x = len(input)
+				cursorX = len(input)
 				update = true
 			case termbox.KeyCtrlZ:
 				found := -1
-				name := current[cursor_y].name
+				name := current[cursorY].name
 				for i, s := range selected {
 					if name == s {
 						found = i
@@ -579,20 +577,20 @@ loop:
 					}
 				}
 				if found == -1 {
-					selected = append(selected, current[cursor_y].name)
+					selected = append(selected, current[cursorY].name)
 				} else {
 					selected = append(selected[:found], selected[found+1:]...)
 				}
 				update = true
 			case termbox.KeyBackspace, termbox.KeyBackspace2:
-				if cursor_x > 0 {
-					input = append(input[0:cursor_x-1], input[cursor_x:len(input)]...)
-					cursor_x--
+				if cursorX > 0 {
+					input = append(input[0:cursorX-1], input[cursorX:len(input)]...)
+					cursorX--
 					update = true
 				}
 			case termbox.KeyDelete:
-				if cursor_x < len([]rune(input)) {
-					input = append(input[0:cursor_x], input[cursor_x+1:len(input)]...)
+				if cursorX < len([]rune(input)) {
+					input = append(input[0:cursorX], input[cursorX+1:len(input)]...)
 					update = true
 				}
 			case termbox.KeyCtrlR:
@@ -604,10 +602,10 @@ loop:
 				}
 				if ev.Ch > 0 {
 					out := []rune{}
-					out = append(out, input[0:cursor_x]...)
+					out = append(out, input[0:cursorX]...)
 					out = append(out, ev.Ch)
-					input = append(out, input[cursor_x:len(input)]...)
-					cursor_x++
+					input = append(out, input[cursorX:len(input)]...)
+					cursorX++
 					update = true
 				}
 			}
