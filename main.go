@@ -32,7 +32,6 @@ const version = "0.0.4"
 var revision = "HEAD"
 
 var (
-	edit                = flag.Bool("e", false, "Edit selected file")
 	fuzzy               = flag.Bool("f", false, "Fuzzy match")
 	root                = flag.String("d", "", "Root directory")
 	exit                = flag.Int("x", 1, "Exit code for cancel")
@@ -60,27 +59,6 @@ func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
 func printf_tb(x, y int, fg, bg termbox.Attribute, format string, args ...interface{}) {
 	s := fmt.Sprintf(format, args...)
 	print_tb(x, y, fg, bg, s)
-}
-
-func edit_file(files []string) error {
-	env := os.Getenv("GOFEDITOR")
-	if env == "" {
-		env = os.Getenv("EDITOR")
-	}
-	if env == "" {
-		env = "vim"
-	}
-	args := strings.Split(env, " ")
-	args = append(args, files...)
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Start()
-	if err != nil {
-		return err
-	}
-	return cmd.Wait()
 }
 
 type matched struct {
@@ -576,14 +554,6 @@ loop:
 				if cursor_y > 0 {
 					cursor_y--
 				}
-			case termbox.KeyCtrlO:
-				if cursor_y >= 0 && cursor_y < len(current) {
-					*edit = true
-					if len(selected) == 0 {
-						selected = append(selected, current[cursor_y].name)
-					}
-					break loop
-				}
 			case termbox.KeyCtrlI:
 				heading = !heading
 			case termbox.KeyCtrlL:
@@ -684,19 +654,7 @@ loop:
 		os.Exit(*exit)
 	}
 
-	if *edit {
-		for i, f := range selected {
-			selected[i] = filepath.Join(cwd, f)
-		}
-	}
-
-	if *edit {
-		err = edit_file(selected)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-	} else if flag.NArg() > 0 {
+	if flag.NArg() > 0 {
 		args := flag.Args()
 		args = append(args, selected...)
 		cmd := exec.Command(args[0], args[1:]...)
