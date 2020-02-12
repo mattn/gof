@@ -294,12 +294,12 @@ func readLines(ctx context.Context, wg *sync.WaitGroup, r io.Reader) {
 	var buf *bufio.Reader
 	if se := os.Getenv("GOF_STDIN_ENC"); se != "" {
 		if e := enc.GetEncoding(se); e != nil {
-			buf = bufio.NewReader(transform.NewReader(os.Stdin, e.NewDecoder().Transformer))
+			buf = bufio.NewReader(transform.NewReader(r, e.NewDecoder().Transformer))
 		} else {
-			buf = bufio.NewReader(os.Stdin)
+			buf = bufio.NewReader(r)
 		}
 	} else {
-		buf = bufio.NewReader(os.Stdin)
+		buf = bufio.NewReader(r)
 	}
 	files = []string{}
 
