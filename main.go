@@ -45,6 +45,7 @@ var (
 	heading          = false
 	current          []matched
 	cursorX, cursorY int
+	offset           int
 	width, height    int
 	mutex            sync.Mutex
 	dirty            = false
@@ -172,6 +173,21 @@ func filter(fuzzy bool) {
 	if cursorY >= len(current) {
 		cursorY = len(current) - 1
 	}
+	if cursorY >= 0 && height > 0 {
+		if cursorY < offset {
+			offset = cursorY
+		} else if offset < cursorY-(height-3) {
+			offset = cursorY - (height - 3)
+		}
+		if len(current)-(height-3)-1 < offset {
+			offset = len(current) - (height - 3) - 1
+			if offset < 0 {
+				offset = 0
+			}
+		}
+	} else {
+		offset = 0
+	}
 }
 
 func drawLines() {
@@ -188,12 +204,11 @@ func drawLines() {
 	for _, r := range input {
 		pat += regexp.QuoteMeta(string(r)) + ".*?"
 	}
-	for n := 0; n < height-1; n++ {
+	for n := offset; n <= height-3+offset; n++ {
 		if n >= len(current) {
 			break
 		}
-		x := 2
-		w := 0
+		x, y, w := 2, height-3-(n-offset), 0
 		name := current[n].name
 		pos1 := current[n].pos1
 		pos2 := current[n].pos2
@@ -227,26 +242,26 @@ func drawLines() {
 			}
 			if pos1 <= f && f < pos2 {
 				if selected {
-					termbox.SetCell(x, height-3-n, c, termbox.ColorRed|termbox.AttrBold, termbox.ColorDefault)
+					termbox.SetCell(x, y, c, termbox.ColorRed|termbox.AttrBold, termbox.ColorDefault)
 				} else if cursorY == n {
-					termbox.SetCell(x, height-3-n, c, termbox.ColorYellow|termbox.AttrBold|termbox.AttrUnderline, termbox.ColorDefault)
+					termbox.SetCell(x, y, c, termbox.ColorYellow|termbox.AttrBold|termbox.AttrUnderline, termbox.ColorDefault)
 				} else {
-					termbox.SetCell(x, height-3-n, c, termbox.ColorGreen|termbox.AttrBold, termbox.ColorDefault)
+					termbox.SetCell(x, y, c, termbox.ColorGreen|termbox.AttrBold, termbox.ColorDefault)
 				}
 			} else {
 				if selected {
-					termbox.SetCell(x, height-3-n, c, termbox.ColorRed, termbox.ColorDefault)
+					termbox.SetCell(x, y, c, termbox.ColorRed, termbox.ColorDefault)
 				} else if cursorY == n {
-					termbox.SetCell(x, height-3-n, c, termbox.ColorYellow|termbox.AttrUnderline, termbox.ColorDefault)
+					termbox.SetCell(x, y, c, termbox.ColorYellow|termbox.AttrUnderline, termbox.ColorDefault)
 				} else {
-					termbox.SetCell(x, height-3-n, c, termbox.ColorDefault, termbox.ColorDefault)
+					termbox.SetCell(x, y, c, termbox.ColorDefault, termbox.ColorDefault)
 				}
 			}
 			x += w
 		}
 	}
 	if cursorY >= 0 {
-		tprint(0, height-3-cursorY, termbox.ColorRed|termbox.AttrBold, termbox.ColorDefault, "> ")
+		tprint(0, height-3-(cursorY-offset), termbox.ColorRed|termbox.AttrBold, termbox.ColorDefault, "> ")
 	}
 	if scanning >= 0 {
 		tprint(0, height-2, termbox.ColorGreen, termbox.ColorDefault, string([]rune("-\\|/")[scanning%4]))
@@ -542,13 +557,17 @@ loop:
 				}
 			case termbox.KeyArrowUp, termbox.KeyCtrlK, termbox.KeyCtrlP:
 				if cursorY < len(current)-1 {
-					if cursorY < height-3 {
-						cursorY++
+					cursorY++
+					if offset < cursorY-(height-3) {
+						offset = cursorY - (height - 3)
 					}
 				}
 			case termbox.KeyArrowDown, termbox.KeyCtrlJ, termbox.KeyCtrlN:
 				if cursorY > 0 {
 					cursorY--
+					if cursorY < offset {
+						offset = cursorY
+					}
 				}
 			case termbox.KeyCtrlI:
 				heading = !heading
