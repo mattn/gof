@@ -19,6 +19,7 @@ import (
 
 	"golang.org/x/text/transform"
 
+	"github.com/mattn/go-colorable"
 	enc "github.com/mattn/go-encoding"
 	"github.com/mattn/go-runewidth"
 	"github.com/nsf/termbox-go"
@@ -405,6 +406,9 @@ func main() {
 		fmt.Printf("%s %s (rev: %s/%s)\n", name, version, revision, runtime.Version())
 		return
 	}
+
+	defer colorable.EnableColorsStdout(nil)()
+
 	var err error
 
 	// Make regular expression pattern to ignore files.
