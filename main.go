@@ -37,6 +37,7 @@ type matched struct {
 	pos1     int
 	pos2     int
 	selected bool
+	index    int
 }
 
 var (
@@ -98,6 +99,7 @@ func filter(fuzzy bool) {
 				pos1:     -1,
 				pos2:     -1,
 				selected: prevSelected,
+				index:    n,
 			}
 		}
 	} else if fuzzy {
@@ -126,6 +128,7 @@ func filter(fuzzy bool) {
 				pos1:     len([]rune(f[0:ms[0][2]])),
 				pos2:     len([]rune(f[0:ms[0][3]])),
 				selected: prevSelected,
+				index:    len(tmp),
 			})
 		}
 	} else {
@@ -154,13 +157,14 @@ func filter(fuzzy bool) {
 				pos1:     pos1,
 				pos2:     pos1 + len(inp),
 				selected: prevSelected,
+				index:    len(tmp),
 			})
 		}
 	}
 	if len(inp) > 0 {
 		sort.Slice(tmp, func(i, j int) bool {
 			li, lj := tmp[i].pos2-tmp[i].pos1, tmp[j].pos2-tmp[j].pos1
-			return li < lj || li == lj && tmp[i].pos1 < tmp[j].pos1
+			return li < lj || li == lj && tmp[i].index < tmp[j].index
 		})
 	}
 
