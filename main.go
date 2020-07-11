@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -387,6 +388,8 @@ func listFiles(ctx context.Context, wg *sync.WaitGroup, cwd string) {
 }
 
 func main() {
+	var open2edit bool
+
 	var fuzzy bool
 	var root string
 	var exit int
@@ -555,6 +558,14 @@ loop:
 					}
 					break loop
 				}
+			case termbox.KeyCtrlO:
+				if cursorY >= 0 && cursorY < len(current) {
+					if len(selected) == 0 {
+						selected = append(selected, current[cursorY].name)
+					}
+					open2edit = true
+					break loop
+				}
 			case termbox.KeyArrowLeft:
 				if cursorX > 0 {
 					cursorX--
@@ -697,15 +708,40 @@ loop:
 		if action != "" {
 			fmt.Println(actionKey)
 		}
+		fArg := []string{}
 		if root != "" {
 			for _, f := range selected {
 				fmt.Println(filepath.Join(root, f))
+				fArg = append(fArg, filepath.Join(root, f))
 			}
 		} else {
 			for _, f := range selected {
 				fmt.Println(f)
+				fArg = append(fArg, f)
 			}
 
+		}
+		if open2edit {
+			cmd := exec.Command("vim", fArg...)
+			fi, err := os.Stdin.Stat()
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+			fo, err := os.Stdout.Stat()
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+			if strings.Index(fi.Mode().String(), "p") != 0 && strings.Index(fo.Mode().String(), "p") != 0 {
+				cmd.Stdin = os.Stdin
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
+				err = cmd.Run()
+				if err != nil {
+					fmt.Println(err)
+				}
+			}
 		}
 	}
 }
