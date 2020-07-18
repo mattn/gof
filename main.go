@@ -469,6 +469,12 @@ func main() {
 			os.Exit(1)
 		}
 	}
+	// shane: https://github.com/mattn/gof/issues/36
+	cwd, err = filepath.EvalSymlinks(cwd)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 
 	redrawFunc := func() {
 		mutex.Lock()
