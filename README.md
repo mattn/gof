@@ -25,12 +25,6 @@ Go Fuzzy
 $ vim `gof`
 ```
 
-* Run gof and type `CTRL-O`, then start to edit with editor.
-
-```sh
-$ gof
-```
-
 * Read from stdin
 
 ```sh
@@ -47,7 +41,6 @@ $ find /tmp | gof
 |<kbd>CTRL-E</kbd>,<kbd>END</kbd>                         |Go to trail of prompt               |
 |<kbd>ARROW-LEFT</kbd>                                    |Move-left cursor                    |
 |<kbd>ARROW-RIGHT</kbd>                                   |Move-right cursor                   |
-|<kbd>CTRL-O</kbd>                                        |Edit the selected file              |
 |<kbd>CTRL-I</kbd>                                        |Toggle view header/trailing of lines|
 |<kbd>CTRL-L</kbd>                                        |Redraw                              |
 |<kbd>CTRL-U</kbd>                                        |Clear prompt                        |
