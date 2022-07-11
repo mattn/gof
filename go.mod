@@ -9,6 +9,6 @@ require (
 	github.com/nsf/termbox-go v0.0.0-20200204031403-4d2b513ad8be
 	github.com/saracen/walker v0.0.0-20191201085201-324a081bae7e
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a // indirect
-	golang.org/x/sys v0.0.0-20200409092240-59c9f1ba88fa // indirect
+	golang.org/x/sys v0.0.0-20220708085239-5a0f0661e09d // indirect
 	golang.org/x/text v0.3.2
 )
