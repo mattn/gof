@@ -10,7 +10,7 @@ Go Fuzzy
 
 ## Installation
 
-    $ go get github.com/mattn/gof
+    $ go install github.com/mattn/gof@latest
 
 ## Feature
 
