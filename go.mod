@@ -1,14 +1,16 @@
 module github.com/mattn/gof
 
-go 1.12
+go 1.17
 
 require (
-	github.com/mattn/go-colorable v0.1.6
+	github.com/mattn/go-colorable v0.1.13
 	github.com/mattn/go-encoding v0.0.2
-	github.com/mattn/go-runewidth v0.0.9
-	github.com/nsf/termbox-go v0.0.0-20200204031403-4d2b513ad8be
-	github.com/saracen/walker v0.0.0-20191201085201-324a081bae7e
-	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a // indirect
-	golang.org/x/sys v0.0.0-20220708085239-5a0f0661e09d // indirect
-	golang.org/x/text v0.3.2
+	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-runewidth v0.0.14
+	github.com/nsf/termbox-go v1.1.1
+	github.com/rivo/uniseg v0.4.4 // indirect
+	github.com/saracen/walker v0.1.3
+	golang.org/x/sync v0.1.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/text v0.7.0
 )
